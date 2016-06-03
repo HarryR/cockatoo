@@ -32,8 +32,14 @@ The setup process goes as follows:
 
 Checkout the source, install the prerequesites and build the containers with:
 
-	git clone https://github.com/HarryR/cockatoo
-	make -C cockatoo prereq build
+	apt-get install make
+	git clone https://github.com/HarryR/cockatoo --recursive
+	make -C cockatoo prereq
+
+	# Then make sure your user is a member of the 'docker' group
+	# e.g.: gpasswd -a $USERNAME docker
+	make -C cockatoo build
+	vboxmanage hostonlyif create
 
 The full build process will take 10 minutes to an hour+ depending on your
 internet, cpu and disk speeds etc. Assuming everything goes well you will have 
