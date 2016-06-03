@@ -66,7 +66,7 @@ RUN echo "Install ssdeep..." \
   && python setup.py build \
   && python setup.py install
 
-RUN apt-get install -y python-psycopg2 ipython
+RUN apt-get install -y python-psycopg2 ipython python-pil python-m2crypto python-m2ext
 RUN /usr/local/bin/pip install mitmproxy vmcloak
 
 # git clone https://github.com/HarryR/cuckoo.git --branch bugfixes --single-branch /cuckoo \
