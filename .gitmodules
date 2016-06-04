@@ -1,3 +1,6 @@
 [submodule "src/cuckoo/cuckoo"]
 	path = src/cuckoo/cuckoo
 	url = https://github.com/HarryR/cuckoo.git
+[submodule "src/vmcloak/vmcloak"]
+	path = src/vmcloak/vmcloak
+	url = https://github.com/HarryR/vmcloak.git
