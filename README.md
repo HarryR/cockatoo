@@ -36,11 +36,29 @@ Checkout the source, install the prerequesites and build the containers with:
 	git clone https://github.com/HarryR/cockatoo --recursive
 	make -C cockatoo prereq
 
+	# In /etc/default/docker - modify DOCKER_OPTS:
+	# DOCKER_OPTS="--storage-driver=devicemapper"
+	sudo service docker restart
+
 	# Then make sure your user is a member of the 'docker' and 'vboxusers' group
 	# e.g.: gpasswd -a $USERNAME docker
 	# e.g.: gpasswd -a $USERNAME vboxusers
 	make -C cockatoo build
 	vboxmanage hostonlyif create
+
+	# Then setup rules to block LAN access from vboxnet0
+	ufw deny in on vboxnet0 to 172.16.0.0/12
+	ufw deny in on vboxnet0 to 192.168.0.0/16
+	ufw deny in on vboxnet0 to 10.0.0.0/8
+	ufw deny in on vboxnet0 proto ipv6
+	ufw deny out on enp4s0f0 from 172.28.128.0/24
+	ufw route allow in on vboxnet0 from 172.28.128.0/24
+	ufw route allow in on docker0
+	ufw allow 5432/tcp
+	ufw allow 9003/tcp
+	ufw allow 8090/tcp
+	ufw allow 2042/tcp
+
 
 The full build process will take 10 minutes to an hour+ depending on your
 internet, cpu and disk speeds etc. Assuming everything goes well you will have 
@@ -69,7 +87,7 @@ to be ready to start processing malware.
 
 Finally, it's time to start up the behemoth:
 
-	make run
+	sudo make run
 
 ## Architecture & Infrastructure
 
@@ -80,7 +98,7 @@ IP addresses:
 
 Ports:
 
- * 9003 - Cuckoo Distributed API
+ * 9003 - Cuckoo Distributed API - allow through firewall
  * 2042 - Cuckoo Worker Reporting Server
  * 8090 - Cuckoo Worker API
 

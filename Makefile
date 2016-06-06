@@ -132,8 +132,13 @@ build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak
 .PHONY: pre-run
 pre-run:
 	vboxmanage list hostonlyifs > /dev/null
+	sleep 3
+	vboxmanage list hostonlyifs > /dev/null
 	vboxmanage hostonlyif ipconfig vboxnet0 --ip 172.28.128.1
 	vboxmanage dhcpserver remove --ifname vboxnet0 || true
+
+shell-cuckoo-worker:
+	docker exec -ti cuckoo-worker bash
 
 .PHONY: run
 run: pre-run
