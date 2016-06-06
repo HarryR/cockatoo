@@ -125,7 +125,7 @@ cryptostorm: /etc/openvpn/cryptostorm.conf
 
 
 .PHONY: build
-build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql
+build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak
 
 # Configure hostonly networks consistently before starting
 # This ensures that vboxnet0 is up and has a known IP / subnet

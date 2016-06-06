@@ -32,12 +32,13 @@ The setup process goes as follows:
 
 Checkout the source, install the prerequesites and build the containers with:
 
-	apt-get install make
+	apt-get install make git
 	git clone https://github.com/HarryR/cockatoo --recursive
 	make -C cockatoo prereq
 
-	# Then make sure your user is a member of the 'docker' group
+	# Then make sure your user is a member of the 'docker' and 'vboxusers' group
 	# e.g.: gpasswd -a $USERNAME docker
+	# e.g.: gpasswd -a $USERNAME vboxusers
 	make -C cockatoo build
 	vboxmanage hostonlyif create
 
@@ -83,6 +84,13 @@ Ports:
  * 2042 - Cuckoo Worker Reporting Server
  * 8090 - Cuckoo Worker API
 
+## Using the VPN
+
+Ensure that `AUTOSTART="none"` in `/etc/default/openvpn`, otherwise the docker daemon will fail to start.
+
+	make cryptostorm
+	systemctl daemon-reload
+
 ## TODO / Maybe / Ideas etc.
 
  * Speed up startup of cuckoo worker (specifically the VM import!)
@@ -98,9 +106,3 @@ Ports:
  * https://www.cuckoosandbox.org/
  * http://deaddrop.threatpool.com/vmcloak-how-to/
 
-## Using the VPN
-
-
-
-	make cryptostorm
-	systemctl daemon-reload
