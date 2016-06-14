@@ -23,7 +23,8 @@ $(RUN_DIR)/pgpass:
 .PHONY: $(RUN_DIR)/env
 $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	@echo '' > $@
-	@echo -n 'POSTGRES_PASSWORD=' >> $@ && cat $(RUN_DIR)/pgpass >> $@
+	@echo -n 'POSTGRES_PASSWORD=' >> $@
+	@cat $(RUN_DIR)/pgpass >> $@
 	@echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $@
 	@echo MYIP=$(MYIP) >> $@
 	@echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $@

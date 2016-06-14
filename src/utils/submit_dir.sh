@@ -14,7 +14,8 @@ do
 	do
 		FULLPATH=$DIR/$FILE
 		if [[ -f "$FULLPATH" ]]; then
-			curl http://localhost:9003/api/task -F file="@$FULLPATH" -F timeout=120
+			curl http://localhost:9003/api/task -F file="@$FULLPATH" -F timeout=60
+			rm "$FULLPATH"
 		fi
 	done
 done 
