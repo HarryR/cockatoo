@@ -30,6 +30,7 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	@echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $@
 	@echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024)) >> $@
 	@echo CUCKOO_VPN=yes >> $@
+	@echo VM_MAX_N=1 >> $@
 
 env: $(RUN_DIR)/env
 
@@ -63,6 +64,7 @@ vmcloak:
 
 .PHONY: virtualbox5
 virtualbox5:
+	docker pull ubuntu:16.04
 	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
 
 .PHONY: cuckoo
@@ -99,6 +101,9 @@ prereq:
 	sudo apt-get update
 	sudo apt-get -y install linux-image-extra-`uname -r` docker-engine docker-compose
 
+docker-gc:
+	docker pull spotify/docker-gc
+	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc spotify/docker-gc
 
 cryptostorm: /etc/openvpn/cryptostorm.conf
 /etc/openvpn/cryptostorm.conf:
@@ -138,49 +143,58 @@ pre-run:
 	vboxmanage hostonlyif ipconfig vboxnet0 --ip 172.28.128.1
 	vboxmanage dhcpserver remove --ifname vboxnet0 || true
 
-shell-cuckoo-worker:
-	docker exec -ti cuckoo-worker bash
-
 .PHONY: run
 run: pre-run
 	mkdir -p $(RUN_DIR)/supervisor/
-	supervisord -n -c supervisord.conf 
+	sudo supervisord -n -c supervisord.conf 
+
+psql:
+	PGPASSWORD=`cat run/pgpass` psql -h localhost -U postgres
 
 stop-vmcloak:
 	@docker kill -s TERM vmcloak || true
 
-.PHONY: stop-cuckoo-worker
-stop-cuckoo-worker:
+stop-worker:
 	@docker kill -s TERM cuckoo-worker || true
 	sleep 3
 
-.PHONY: stop-cuckoo-dist-api
-stop-cuckoo-dist-api:
+stop-dist:
 	@docker kill -s TERM cuckoo-dist-api || true
 	sleep 3
 
-.PHONY: stop-cuckoo-dist-db
-stop-cuckoo-dist-db:
+stop-db:
 	@docker kill -s TERM cuckoo-dist-db || true
 	sleep 3
 
-stop: stop-vmcloak stop-cuckoo-worker stop-cuckoo-dist-api stop-cuckoo-dist-db
+stop: stop-vmcloak stop-worker stop-dist stop-db
 
-.PHONY: console
-console:
-	supervisorctl -c supervisord.conf
+# Supervisorctl
+supervise:
+	sudo supervisorctl -c supervisord.conf
+supervise-dist:
+	docker exec -ti cuckoo-dist-api supervisorctl
+supervise-worker:
+	docker exec -ti cuckoo-worker supervisorctl
+
+# Shells in containers
+shell-db:
+	docker exec -ti cuckoo-dist-db bash
+shell-worker:
+	docker exec -ti cuckoo-worker bash
+shell-dist:
+	docker exec -ti cuckoo-dist-api bash
 
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
 	@docker rm vmcloak || true
 	docker run --name vmcloak -h vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
 
-run-cuckoo-worker: $(RUN_DIR)/env pre-run stop-cuckoo-worker
+run-worker: $(RUN_DIR)/env pre-run stop-worker
 	@docker rm cuckoo-worker || true
 	mkdir -p /tmp/rooter
 	docker run --name cuckoo-worker --env-file=$(RUN_DIR)/env --net=host --privileged --cap-add net_admin -v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock -v /cuckoo/storage/ -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /root/.vmcloak/vms/ -v /dev/vboxdrv:/dev/vboxdrv -v /tmp/rooter:/tmp/rooter -t harryr/cockatoo:cuckoo-worker
 
-run-cuckoo-dist-api: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-cuckoo-dist-api
+run-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-dist
 	@docker rm cuckoo-dist-api || true
 	docker run --name cuckoo-dist-api -h cuckoo-dist-api -p 9003:9003 --link cuckoo-dist-db:db --env-file=$(RUN_DIR)/env -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v $(DIST_REPORTS_DIR):/mnt/reports -v $(DIST_SAMPLES_DIR):/mnt/samples -t harryr/cockatoo:cuckoo-dist
 
@@ -192,7 +206,7 @@ run-rooter: cryptostorm
 #	docker run -v $(PGDATA_WORKER_DIR):/var/lib/postgresql/data/ -e POSTGRES_PASSWORD=`cat $(RUN_DIR)/pgpass` -ti harryr/cockatoo:postgresql
 
 # Start the Cuckoo Dist Server PostgreSQL container
-run-cuckoo-dist-db: $(PGDATA_DIST_DIR) $(RUN_DIR)/env stop-cuckoo-dist-db
+run-db: $(PGDATA_DIST_DIR) $(RUN_DIR)/env stop-db
 	@docker rm cuckoo-dist-db || true
 	docker run --name cuckoo-dist-db -h cuckoo-dist-db -p 5432:5432 --env-file=$(RUN_DIR)/env -v $(PGDATA_DIST_DIR):/var/lib/postgresql/data/ harryr/cockatoo:postgresql
 

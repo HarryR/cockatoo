@@ -12,6 +12,12 @@ VMS_TO_REGISTER=`ls -1 /root/.vmcloak/image/`
 if [[ ! -z "$VMS_TO_REGISTER" ]]; then
 	for FILE in $VMS_TO_REGISTER
 	do
+		if [[ ! -z "$VM_MAX_N" ]]; then
+			if [[ $VM_N -ge $VM_MAX_N ]]; then
+				echo "Not spawning any more, reached MAX $VM_MAX_N"
+				break
+			fi
+		fi
 		vmname=`basename $FILE | cut -f 1 -d .`
 		vmip=$SUBNET.$((BASEIP+VM_N))
 		# First purge, then register it again
