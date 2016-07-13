@@ -2,15 +2,23 @@ ROOT_DIR = $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 DATA_DIR = $(ROOT_DIR)/data/
 RUN_DIR = $(ROOT_DIR)/run/
 
+# Tune how cuckoo worker connects to internet
+CUCKOO_VPN := no # yes
+CUCKOO_DEFAULT_ROUTE := internet # freevpn
+CUCKOO_MACHINERY := virtualbox
+
 VMCLOAK_ISOS_DIR=$(ROOT_DIR)/isos
 VMCLOAK_PERSIST_DIR=$(DATA_DIR)/vmcloak
+QEMU_PERSIST_DIR=$(DATA_DIR)/qemu
 DIST_SAMPLES_DIR=$(DATA_DIR)/samples/
 DIST_REPORTS_DIR=$(DATA_DIR)/reports/
 PGDATA_DIST_DIR=$(DATA_DIR)/dist-pgdata
 DOCKER_BASETAG=harryr/cockatoo
 #PGDATA_WORKER_DIR=$(DATA_DIR)/worker-pgdata
-MYIP := $(shell src/utils/myip.sh)
-MEM_TOTAL=$(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
+MYIP_IFACE = $(shell src/utils/myip.sh)
+MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
+MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
+MEM_TOTAL := $(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
 
 all:
 	@echo "See README.md for information on how to get started"
@@ -21,18 +29,24 @@ $(RUN_DIR)/pgpass:
 
 # Create single file containing all environment segments
 .PHONY: $(RUN_DIR)/env
+$(RUN_DIR)/env: DERP=$(shell tempfile)
 $(RUN_DIR)/env: $(RUN_DIR)/pgpass
-	@echo '' > $@
-	@echo -n 'POSTGRES_PASSWORD=' >> $@
-	@cat $(RUN_DIR)/pgpass >> $@
-	@echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $@
-	@echo MYIP=$(MYIP) >> $@
-	@echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $@
-	@echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024)) >> $@
-	@echo CUCKOO_VPN=yes >> $@
-	@echo VM_MAX_N=1 >> $@
+	rm -f $@
+	echo '' > $(DERP)
+	echo -n 'POSTGRES_PASSWORD=' >> $(DERP)
+	cat $(RUN_DIR)/pgpass >> $(DERP)
+	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
+	echo MYIP=$(MYIP) >> $(DERP)
+	echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $(DERP)
+	echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024)) >> $(DERP)
+	echo CUCKOO_VPN=$(CUCKOO_VPN) >> $(DERP)
+	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
+	echo CUCKOO_INTERNET_ETH=tun1 >> $(DERP)
+	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
+	echo VM_MAX_N=2 >> $(DERP)
+	echo mv $(DERP) $@
 
-env: $(RUN_DIR)/env
+env: $(RUN_DIR)/env 
 
 $(VMCLOAK_ISOS_DIR):
 	mkdir -p $@
@@ -158,6 +172,9 @@ stop-worker:
 	@docker kill -s TERM cuckoo-worker || true
 	sleep 3
 
+kill-worker:
+	docker kill cuckoo-worker || true
+
 stop-dist:
 	@docker kill -s TERM cuckoo-dist-api || true
 	sleep 3
@@ -192,7 +209,16 @@ run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
 run-worker: $(RUN_DIR)/env pre-run stop-worker
 	@docker rm cuckoo-worker || true
 	mkdir -p /tmp/rooter
-	docker run --name cuckoo-worker --env-file=$(RUN_DIR)/env --net=host --privileged --cap-add net_admin -v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock -v /cuckoo/storage/ -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /root/.vmcloak/vms/ -v /dev/vboxdrv:/dev/vboxdrv -v /tmp/rooter:/tmp/rooter -t harryr/cockatoo:cuckoo-worker
+	docker run --name cuckoo-worker --env-file=$(RUN_DIR)/env \
+		--net=host --privileged --cap-add net_admin \
+		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
+		-v /cuckoo/storage/ \
+		-v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+		-v $(QEMU_PERSIST_DIR):/root/qemu/ \
+		-v /root/.vmcloak/vms/ \
+		-v /dev/vboxdrv:/dev/vboxdrv \
+		-v /tmp/rooter:/tmp/rooter \
+		-t harryr/cockatoo:cuckoo-worker
 
 run-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-dist
 	@docker rm cuckoo-dist-api || true
