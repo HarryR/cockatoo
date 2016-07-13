@@ -29,9 +29,8 @@ $(RUN_DIR)/pgpass:
 
 # Create single file containing all environment segments
 .PHONY: $(RUN_DIR)/env
-$(RUN_DIR)/env: DERP=$(shell tempfile)
+$(RUN_DIR)/env: DERP:=$(shell tempfile)
 $(RUN_DIR)/env: $(RUN_DIR)/pgpass
-	rm -f $@
 	echo '' > $(DERP)
 	echo -n 'POSTGRES_PASSWORD=' >> $(DERP)
 	cat $(RUN_DIR)/pgpass >> $(DERP)
@@ -44,7 +43,7 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	echo CUCKOO_INTERNET_ETH=tun1 >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
 	echo VM_MAX_N=2 >> $(DERP)
-	echo mv $(DERP) $@
+	mv $(DERP) $@
 
 env: $(RUN_DIR)/env 
 
