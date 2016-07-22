@@ -9,6 +9,7 @@ CUCKOO_MACHINERY := virtualbox
 
 VMCLOAK_ISOS_DIR=$(ROOT_DIR)/isos
 VMCLOAK_PERSIST_DIR=$(DATA_DIR)/vmcloak
+MALTRIEVE_DIR=$(DATA_DIR)/maltrieve/
 QEMU_PERSIST_DIR=$(DATA_DIR)/qemu
 DIST_SAMPLES_DIR=$(DATA_DIR)/samples/
 DIST_REPORTS_DIR=$(DATA_DIR)/reports/
@@ -47,6 +48,10 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	mv -f $(DERP) $@
 
 env: $(RUN_DIR)/env 
+
+$(MALTRIEVE_DIR):
+	mkdir -p $@
+	chmod 777 $@
 
 $(VMCLOAK_ISOS_DIR):
 	mkdir -p $@
@@ -87,6 +92,10 @@ cuckoo: virtualbox5
 
 .PHONY: postgresql
 postgresql:
+	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
+
+.PHONY: maltrieve
+maltrieve:
 	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
 
 .PHONY: cuckoo-worker
@@ -145,7 +154,7 @@ cryptostorm: /etc/openvpn/cryptostorm.conf
 
 
 .PHONY: build
-build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak
+build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak maltrieve
 
 # Configure hostonly networks consistently before starting
 # This ensures that vboxnet0 is up and has a known IP / subnet
@@ -183,7 +192,11 @@ stop-db:
 	@docker kill -s TERM cuckoo-dist-db || true
 	sleep 3
 
-stop: stop-vmcloak stop-worker stop-dist stop-db
+stop-maltrieve:
+	@docker kill -s TERM maltrieve || true
+	sleep 3
+
+stop: stop-vmcloak stop-worker stop-dist stop-db stop-maltrieve
 
 # Supervisorctl
 supervise:
@@ -201,10 +214,14 @@ shell-worker:
 shell-dist:
 	docker exec -ti cuckoo-dist-api bash
 
+run-maltrieve: maltrieve stop-maltrieve
+	@docker rm maltrieve || true
+	docker run --name maltrieve -h maltrieve --link cuckoo-dist-api:dist -v $(MALTRIEVE_DIR):/archive -t $(DOCKER_BASETAG):maltrieve
+
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
 	@docker rm vmcloak || true
-	docker run --name vmcloak -h vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
+	docker run --name vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
 
 run-worker: $(RUN_DIR)/env pre-run stop-worker
 	@docker rm cuckoo-worker || true
@@ -218,11 +235,11 @@ run-worker: $(RUN_DIR)/env pre-run stop-worker
 		-v /root/.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
 		-v /tmp/rooter:/tmp/rooter \
-		-t harryr/cockatoo:cuckoo-worker
+		-t $(DOCKER_BASETAG):cuckoo-worker
 
 run-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-dist
 	@docker rm cuckoo-dist-api || true
-	docker run --name cuckoo-dist-api -h cuckoo-dist-api -p 9003:9003 --link cuckoo-dist-db:db --env-file=$(RUN_DIR)/env -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v $(DIST_REPORTS_DIR):/mnt/reports -v $(DIST_SAMPLES_DIR):/mnt/samples -t harryr/cockatoo:cuckoo-dist
+	docker run --name cuckoo-dist-api -h cuckoo-dist-api -p 9003:9003 --link cuckoo-dist-db:db --env-file=$(RUN_DIR)/env -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v $(DIST_REPORTS_DIR):/mnt/reports -v $(DIST_SAMPLES_DIR):/mnt/samples -t $(DOCKER_BASETAG):cuckoo-dist
 
 run-rooter: cryptostorm
 	sudo python $(ROOT_DIR)/src/cuckoo/cuckoo/utils/rooter.py -g nogroup -v $(ROOT_DIR)/run/rooter.sock
@@ -234,5 +251,5 @@ run-rooter: cryptostorm
 # Start the Cuckoo Dist Server PostgreSQL container
 run-db: $(PGDATA_DIST_DIR) $(RUN_DIR)/env stop-db
 	@docker rm cuckoo-dist-db || true
-	docker run --name cuckoo-dist-db -h cuckoo-dist-db -p 5432:5432 --env-file=$(RUN_DIR)/env -v $(PGDATA_DIST_DIR):/var/lib/postgresql/data/ harryr/cockatoo:postgresql
+	docker run --name cuckoo-dist-db -h cuckoo-dist-db -p 5432:5432 --env-file=$(RUN_DIR)/env -v $(PGDATA_DIST_DIR):/var/lib/postgresql/data/ $(DOCKER_BASETAG):postgresql
 
