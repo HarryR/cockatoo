@@ -181,6 +181,9 @@ stop-worker:
 	@docker kill -s TERM cuckoo-worker || true
 	sleep 3
 
+kill-maltrieve:
+	docker kill maltrieve || true
+
 kill-worker:
 	docker kill cuckoo-worker || true
 
@@ -213,6 +216,8 @@ shell-worker:
 	docker exec -ti cuckoo-worker bash
 shell-dist:
 	docker exec -ti cuckoo-dist-api bash
+shell-maltrieve:
+	docker exec -ti maltrieve bash
 
 run-maltrieve: maltrieve stop-maltrieve
 	@docker rm maltrieve || true
