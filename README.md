@@ -47,8 +47,15 @@ Checkout the source, install the prerequesites and build the containers with:
 	vboxmanage hostonlyif create
 
 	# Then setup rules to block LAN access from vboxnet0
-	ufw default allow routed
-	ufw default allow incoming
+	ufw allow in on enp4s0f0 from 192.168.10.0/24 to 192.168.10.0/24 port 22
+	ufw default deny incoming
+	ufw route allow in on docker0
+	ufw allow in on vboxnet0 to 172.28.128.0/24
+	ufw deny in on vboxnet0 to 172.16.0.0/12
+	ufw deny in on vboxnet0 to 192.168.0.0/16
+	ufw deny in on vboxnet0 to 10.0.0.0/8
+	#ufw default allow routed
+
 
 	#ufw default deny incoming
 	#ufw deny in on vboxnet0 to 172.16.0.0/12
@@ -122,6 +129,18 @@ Ensure that `AUTOSTART="none"` in `/etc/default/openvpn`, otherwise the docker d
 
 	make cryptostorm
 	systemctl daemon-reload
+
+## Managing Cockatoo
+
+The `Makefile` includes utility targets to provide easy access to container shells, the supervisor processes etc. for easy debugging:
+
+ * `make supervise`
+ * `make supervise-worker`
+ * `make supervise-dist`
+ * `make shell-db`
+ * `make shell-worker`
+
+To pause processing, stop the 'dist-scheduler' process
 
 ## TODO / Maybe / Ideas etc.
 

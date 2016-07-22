@@ -13,6 +13,7 @@ COPY conf/virtualbox.conf /cuckoo/conf/virtualbox.conf
 COPY conf/qemu.conf /cuckoo/conf/qemu.conf
 COPY conf/auxiliary.conf /cuckoo/conf/auxiliary.conf
 COPY conf/vpn.conf /cuckoo/conf/vpn.conf
+COPY conf/processing.conf /cuckoo/conf/processing.conf
 
 COPY supervisord.conf /etc/supervisor/conf.d/cuckoo.conf
 

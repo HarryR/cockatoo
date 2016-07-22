@@ -3,8 +3,8 @@ DATA_DIR = $(ROOT_DIR)/data/
 RUN_DIR = $(ROOT_DIR)/run/
 
 # Tune how cuckoo worker connects to internet
-CUCKOO_VPN := no # yes
-CUCKOO_DEFAULT_ROUTE := internet # freevpn
+CUCKOO_VPN := no
+CUCKOO_DEFAULT_ROUTE := internet # cryptostorm 
 CUCKOO_MACHINERY := virtualbox
 
 VMCLOAK_ISOS_DIR=$(ROOT_DIR)/isos
@@ -18,6 +18,7 @@ DOCKER_BASETAG=harryr/cockatoo
 MYIP_IFACE = $(shell src/utils/myip.sh)
 MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
 MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
+MYIFACE := tun1
 MEM_TOTAL := $(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
 
 all:
@@ -37,13 +38,13 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
 	echo MYIP=$(MYIP) >> $(DERP)
 	echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $(DERP)
-	echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024)) >> $(DERP)
+	echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
 	echo CUCKOO_VPN=$(CUCKOO_VPN) >> $(DERP)
 	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
-	echo CUCKOO_INTERNET_ETH=tun1 >> $(DERP)
+	echo CUCKOO_INTERNET_ETH=$(MYIFACE) >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
-	echo VM_MAX_N=2 >> $(DERP)
-	mv $(DERP) $@
+	#echo VM_MAX_N=2 >> $(DERP)
+	mv -f $(DERP) $@
 
 env: $(RUN_DIR)/env 
 
