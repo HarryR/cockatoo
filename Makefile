@@ -19,7 +19,7 @@ DOCKER_BASETAG=harryr/cockatoo
 MYIP_IFACE = $(shell src/utils/myip.sh)
 MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
 MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
-MYIFACE := tun1
+#MYIFACE := eth0
 MEM_TOTAL := $(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
 
 all:
@@ -246,7 +246,7 @@ run-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-dist
 	@docker rm cuckoo-dist-api || true
 	docker run --name cuckoo-dist-api -h cuckoo-dist-api -p 9003:9003 --link cuckoo-dist-db:db --env-file=$(RUN_DIR)/env -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v $(DIST_REPORTS_DIR):/mnt/reports -v $(DIST_SAMPLES_DIR):/mnt/samples -t $(DOCKER_BASETAG):cuckoo-dist
 
-run-rooter: cryptostorm
+run-rooter: 
 	sudo python $(ROOT_DIR)/src/cuckoo/cuckoo/utils/rooter.py -g nogroup -v $(ROOT_DIR)/run/rooter.sock
 
 # Start the Cuckoo Worker PostgreSQL container
