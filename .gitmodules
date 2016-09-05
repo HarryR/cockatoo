@@ -6,4 +6,4 @@
 	url = https://github.com/HarryR/vmcloak.git
 [submodule "src/maltrieve"]
 	path = src/maltrieve
-	url = git@github.com:HarryR/maltrieve.git
+	url = https://github.com/HarryR/maltrieve.git
