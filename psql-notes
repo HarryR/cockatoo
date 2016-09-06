@@ -1,2 +1,3 @@
 SELECT date_trunc('day', submitted), COUNT(id) AS day FROM task GROUP BY date_trunc('day', submitted) LIMIT 60;
+SELECT status, COUNT(id) FROM task GROUP BY status;
 

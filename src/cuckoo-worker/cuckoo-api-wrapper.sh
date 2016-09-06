@@ -12,9 +12,11 @@ fi
 /usr/bin/python /cuckoo/utils/api.py -H 0.0.0.0 &
 echo $? > /tmp/cuckoo-api.pid
 sleep 5
+echo "Notifying $CUCKOO_DIST_API/api/node - url=http://$MYIP:8090/"
 RES=`curl $CUCKOO_DIST_API/api/node -F name=$HOSTNAME -F url=http://$MYIP:8090/ | sed ':a;N;$!ba;s/\n/ /g'`
 echo $RES | grep 'There is already a node' &> /dev/null
 if [[ $? -eq 0 ]]; then
+  echo "Notifying $CUCKOO_DIST_API/api/node/$HOSTNAME - url=http://$MYIP:8090/"
   RES=`curl $CUCKOO_DIST_API/api/node/$HOSTNAME -X PUT -F url=http://$MYIP:8090/ -F enabled=1 | sed ':a;N;$!ba;s/\n/ /g'`
 fi
 if [[ $? -ne 0 ]]; then
