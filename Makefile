@@ -226,7 +226,7 @@ run-maltrieve: maltrieve stop-maltrieve
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
 	@docker rm vmcloak || true
-	docker run --name vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
+	docker run --rm=true -e DISPLAY=$(DISPLAY) -v /tmp/.X11-unix:/tmp/.X11-unix --name vmcloak --net=host --privileged -v $(HOME)/.Xauthority:/root/.Xauthority -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
 
 run-worker: $(RUN_DIR)/env pre-run stop-worker
 	@docker rm cuckoo-worker || true
