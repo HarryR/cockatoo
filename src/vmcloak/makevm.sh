@@ -3,7 +3,7 @@ set -xe
 
 if [[ -z "$5" ]]; then
 	echo "Usage: $0 <name> <osversion> <iso> <serial> <ip-last-octet>"
-	echo "Where osversion is one of: winxp win7 win7x64"
+	echo "Where osversion is one of: winxp win7x86 win7x64 win81x86 win81x64 win10x86 win10x64"
 	exit
 fi
 
@@ -23,6 +23,6 @@ if [[ $? -ne 0 ]]; then
 	exit
 fi
 
-vmcloak-init --$VER --iso-mount $ISO_MNT --serial-key $SERIAL --ip 172.28.128.$IP --gateway 172.28.128.1 --resolution 1280x720 $NAME
+vmcloak init --$VER --iso-mount $ISO_MNT --serial-key $SERIAL --ip 172.28.128.$IP --gateway 172.28.128.1 --resolution 1280x720 $NAME
 
 umount $ISO_MNT
