@@ -175,14 +175,16 @@ The steps are:
  * Install ccleaner
  * .NET Framework 4.5 (`NDP451-KB2858728-x86-x64-AllOS-ENU.exe`)
  * Install Office 2013, Acrobat (11.0.0.3), Flash (11.7.700.169), Java (7u17), uTorrent (3.3 29609) - www.oldapps.com / all from 2013 - early 2014
- * Install crap from NiNite (avoiding 'security' products?)
+ * Install crap from NiNite (avoiding 'security' products, chrome, firefox, PDF readers etc.)
+ * Install nvidia or ATI drivers and associated cruft.
  * Find a cool desktop background
  * Disable java & acrobate update, ccleaner auto-start etc.
  * Turn off non-essential services - http://www.optimizingpc.com/windows7/optimizing_windows_7_services.html / http://www.blackviper.com/service-configurations/black-vipers-windows-7-service-pack-1-service-configurations/
  * Change OEM branding - http://stormpoopersmith.com/software/oem-brander/
  * Disable LLMNR - http://www.computerstepbystep.com/turn-off-multicast-name-resolution.html
+ * Disable system restore & swap/page file.
  * Disable search indexing on `C:\`
- * Run CCleaner and clean everything
+ * Run CCleaner and clean *everything*
  * Defragment harddrive
  * Wipe free space with zero bytes (CCleaner)
  * Compact VM image - `vboxmanage modifyhd win7x64.vdi --compact`
