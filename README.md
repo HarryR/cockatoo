@@ -151,6 +151,32 @@ To pause processing, stop the 'dist-scheduler' process
  * Tighter security + protection
  * All roads point to `systemd` ....
 
+## VM Installation
+
+Despite having bought retail copies of Windows and Office, they aren't appropriate for using within a malware analysis environment and will frequently complain and/or de-activate themselves, because of this it's necessary to force Windows & Office to permanently activate and not do silly things like constantly ping license servers or otherwise attempt to contact the outside world.
+
+vmcloak configures the first ethernet device, don't change this unless you remember to change it back to previous settings. to access the internet add a second NAT adapter in VirtualBox.
+
+ * Download Windows 7 (`en_windows_7_professional_with_sp1_x64_dvd_u_676939.iso`)
+ * Download Office 2013 (`en_office_professional_plus_2013_x64_dvd_1123674.iso`)
+ * Activate Windows - Daz loader 2.2.2
+ * Install MS Toolkit 2.6, convert Office 2013 to Volume License
+ * Install ccleaner
+ * Install Office 2013, Acrobat (11.0.0.3), Flash (11.7.700.169), Java (7u17), uTorrent (3.3 29609) - www.oldapps.com / all from 2013 - early 2014
+ * Disable LLMNR - http://www.computerstepbystep.com/turn-off-multicast-name-resolution.html
+ * Disable java & acrobate update, ccleaner auto-start etc.
+ * Turn off non-essential services - http://www.optimizingpc.com/windows7/optimizing_windows_7_services.html / http://www.blackviper.com/service-configurations/black-vipers-windows-7-service-pack-1-service-configurations/
+ * Change OEM branding - http://stormpoopersmith.com/software/oem-brander/
+ * .NET Framework 4.5 (`NDP451-KB2858728-x86-x64-AllOS-ENU.exe`)
+ * Disable search indexing on `C:\`
+ * Find a cool desktop background
+ * Run CCleaner and clean everything
+ * Defragment harddrive
+ * Wipe free space with zero bytes (CCleaner)
+ * Compact VM image - `vboxmanage modifyhd win7x64.vdi --compact`
+
+Now you should have a minimal noiseless Windows 7 VM that can open Office documents, play flash & java apps, run most applications etc. All of the stuff your grandmother needs to unsafely browse the internet and get infected with all the crapware in the world.
+
 ## Useful Links
 
  * http://vmcloak.org/
