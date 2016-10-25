@@ -19,8 +19,11 @@ DOCKER_BASETAG=harryr/cockatoo
 MYIP_IFACE = $(shell src/utils/myip.sh)
 MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
 MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
-#MYIFACE := eth0
 MEM_TOTAL := $(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
+
+DOCKER_X11 = -e DISPLAY=$(DISPLAY) -e QT_X11_NO_MITSHM=1 -v $(HOME)/.Xauthority:/root/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix
+
+VIRTUALBOX_MODE = headless  # gui
 
 all:
 	@echo "See README.md for information on how to get started"
@@ -44,6 +47,8 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
 	echo CUCKOO_INTERNET_ETH=$(MYIFACE) >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
+	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
+	echo VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
 	#echo VM_MAX_N=2 >> $(DERP)
 	mv -f $(DERP) $@
 
@@ -128,30 +133,6 @@ docker-gc:
 	docker pull spotify/docker-gc
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc spotify/docker-gc
 
-cryptostorm: /etc/openvpn/cryptostorm.conf
-/etc/openvpn/cryptostorm.conf:
-	sudo service openvpn stop cryptostorm || true
-	# Use free Cryptostorm account
-	sudo wget -qO $@ https://raw.githubusercontent.com/cryptostorm/cryptostorm_client_configuration_files/master/cryptofree_linux-udp.ovpn
-	sudo sh -c "echo 'dev tun1' >> $@"
-	sudo sh -c "echo 'auth-user-pass cryptostorm.creds' >> $@"
-	sudo sh -c "echo 'auth-nocache' >> $@"
-	# Override default route
-	#sudo sh -c "echo 'route 0.0.0.0 128.0.0.0 net_gateway' >> $@"
-	#sudo sh -c "echo 'route 128.0.0.0 128.0.0.0 net_gateway' >> $@"
-	sudo sh -c "echo 'route 0.0.0.0 192.0.0.0 net_gateway' >> $@"
-	sudo sh -c "echo 'route 64.0.0.0 192.0.0.0 net_gateway' >> $@"
-	sudo sh -c "echo 'route 128.0.0.0 192.0.0.0 net_gateway' >> $@"
-	sudo sh -c "echo 'route 192.0.0.0 192.0.0.0 net_gateway' >> $@"
-
-	sudo systemctl daemon-reload
-	sudo chmod 600 $@
-	# Sshhh... super secret leaked access details below! :P
-	sudo sh -c "echo 'acce55' > /etc/openvpn/cryptostorm.creds"
-	sudo sh -c "echo '0verrid3' >> /etc/openvpn/cryptostorm.creds"
-	sudo chmod 600 /etc/openvpn/cryptostorm.creds
-	# echo '201 tun1' >> /etc/iproute2/rt_tables
-
 
 .PHONY: build
 build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak maltrieve
@@ -226,13 +207,14 @@ run-maltrieve: maltrieve stop-maltrieve
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
 	@docker rm vmcloak || true
-	docker run --rm=true -e DISPLAY=$(DISPLAY) -v /tmp/.X11-unix:/tmp/.X11-unix --name vmcloak --net=host --privileged -v $(HOME)/.Xauthority:/root/.Xauthority -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
+	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
 
 run-worker: $(RUN_DIR)/env pre-run stop-worker
 	@docker rm cuckoo-worker || true
 	mkdir -p /tmp/rooter
 	docker run --name cuckoo-worker --env-file=$(RUN_DIR)/env \
 		--net=host --privileged --cap-add net_admin \
+		$(DOCKER_X11) \
 		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
 		-v /cuckoo/storage/ \
 		-v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \

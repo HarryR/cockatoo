@@ -182,6 +182,7 @@ The steps are:
  * Turn off non-essential services - http://www.optimizingpc.com/windows7/optimizing_windows_7_services.html / http://www.blackviper.com/service-configurations/black-vipers-windows-7-service-pack-1-service-configurations/
  * Change OEM branding - http://stormpoopersmith.com/software/oem-brander/
  * Disable LLMNR - http://www.computerstepbystep.com/turn-off-multicast-name-resolution.html
+ * Disable NCSI - https://technet.microsoft.com/en-us/library/cc766017(v=ws.10).aspx - `HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NlaSvc\Parameters\Internet!EnableActiveProbing=0`
  * Disable system restore & swap/page file.
  * Disable search indexing on `C:\`
  * Run CCleaner and clean *everything*
