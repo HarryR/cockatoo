@@ -162,10 +162,10 @@ stop-worker:
 	@docker kill -s TERM cuckoo-worker || true
 	sleep 3
 
-kill-maltrieve:
+kill-maltrieve: stop-maltrieve
 	docker kill maltrieve || true
 
-kill-worker:
+kill-worker: stop-worker
 	docker kill cuckoo-worker || true
 
 stop-dist:
