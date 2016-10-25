@@ -202,7 +202,10 @@ shell-maltrieve:
 
 run-maltrieve: maltrieve stop-maltrieve
 	@docker rm maltrieve || true
-	docker run --name maltrieve -h maltrieve --link cuckoo-dist-api:dist -v $(MALTRIEVE_DIR):/archive -t $(DOCKER_BASETAG):maltrieve
+	docker run --rm=true --name maltrieve -h maltrieve --link cuckoo-dist-api:dist -v $(MALTRIEVE_DIR):/archive -t $(DOCKER_BASETAG):maltrieve
+
+run-maltrieve-loop:
+	./src/utils/maltrieve-loop.sh
 
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
