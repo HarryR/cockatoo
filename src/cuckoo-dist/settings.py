@@ -33,4 +33,4 @@ interval = 30
 # Threshold and amount of tasks to push every time a Cuckoo node requires
 # more samples. That is, whenever the "pending" task count drops below
 # "threshold" tasks, "threshold" tasks are submitted to the node.
-threshold = 20
+threshold = 3
