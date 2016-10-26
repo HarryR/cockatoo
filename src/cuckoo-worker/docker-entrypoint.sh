@@ -30,9 +30,9 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true
-			vmcloak snapshot $vmname vm-$vmname $vmip
+			vmcloak snapshot --count 4 $vmname vm-$vmname $vmip
 			vmcloak register vm-$vmname /cuckoo
-			VM_N=$((VM_N + 1))
+			VM_N=$((VM_N + 4))
 		done
 	else
 		echo "WARNING: no VMs to register... Cuckoo will fail hard."

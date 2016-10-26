@@ -194,7 +194,14 @@ Now you should have a minimal noiseless Windows 7 VM that can open Office docume
 
 ## Useful Links
 
+### Cuckoo / VMCloak
+
  * http://vmcloak.org/
  * https://www.cuckoosandbox.org/
  * http://deaddrop.threatpool.com/vmcloak-how-to/
 
+### OpenVPN 
+
+ * http://askubuntu.com/questions/763583/correct-way-of-systemd-for-openvpn-client-on-16-04-server
+ * http://unix.stackexchange.com/questions/148990/using-openvpn-with-systemd
+ * `/lib/systemd/system-generators/openvpn-generator cryptostorm`

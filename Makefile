@@ -20,6 +20,7 @@ MYIP_IFACE = $(shell src/utils/myip.sh)
 MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
 MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
 MEM_TOTAL := $(shell cat /proc/meminfo | grep MemTotal | awk '{print $$2}')
+CPU_COUNT := $(shell cat /proc/cpuinfo  | grep bogomips | wc -l)
 
 DOCKER_X11 = -e DISPLAY=$(DISPLAY) -e QT_X11_NO_MITSHM=1 -v $(HOME)/.Xauthority:/root/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix
 
@@ -41,7 +42,7 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	cat $(RUN_DIR)/pgpass >> $(DERP)
 	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
 	echo MYIP=$(MYIP) >> $(DERP)
-	echo CPU_COUNT=`cat /proc/cpuinfo  | grep bogomips | wc -l` >> $(DERP)
+	echo CPU_COUNT=$(CPU_COUNT) >> $(DERP)
 	echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
 	echo CUCKOO_VPN=$(CUCKOO_VPN) >> $(DERP)
 	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
