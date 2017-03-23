@@ -8,7 +8,9 @@ from os import environ, urandom
 # Examples, see documentation for more:
 # postgresql://foo:bar@localhost:5432/mydatabase
 # mysql://foo:bar@localhost/mydatabase
-SQLALCHEMY_DATABASE_URI = "postgresql://postgres:%s@%s/postgres" % (environ.get('DB_ENV_POSTGRES_PASSWORD'), environ.get('DB_PORT_5432_TCP_ADDR'))
+SQLALCHEMY_DATABASE_URI = "postgresql://%s:%s@%s/%s" % (
+	environ.get('POSTGRES_USER'), environ.get('POSTGRES_PASSWORD'),
+	environ.get('DB_PORT_5432_TCP_ADDR'), environ.get('POSTGRES_DB'))
 
 # Secret key used by Flask to generate sessions etc. (This feature is not
 # actually used at the moment as we have no user accounts etc).

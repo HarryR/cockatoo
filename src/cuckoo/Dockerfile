@@ -45,6 +45,7 @@ RUN buildDeps='ca-certificates \
                           tcpdump \
                           git-core \
                           supervisor \
+                          net-tools iptables \
                           python-dpkt \
                           python-magic \
                           python-gridfs \

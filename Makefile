@@ -7,15 +7,16 @@ CUCKOO_VPN := no
 CUCKOO_DEFAULT_ROUTE := internet # cryptostorm 
 CUCKOO_MACHINERY := virtualbox
 
+VBOXNET=vboxnet0
+
 VMCLOAK_ISOS_DIR=$(ROOT_DIR)/isos
 VMCLOAK_PERSIST_DIR=$(DATA_DIR)/vmcloak
 MALTRIEVE_DIR=$(DATA_DIR)/maltrieve/
 QEMU_PERSIST_DIR=$(DATA_DIR)/qemu
 DIST_SAMPLES_DIR=$(DATA_DIR)/samples/
 DIST_REPORTS_DIR=$(DATA_DIR)/reports/
-PGDATA_DIST_DIR=$(DATA_DIR)/dist-pgdata
-DOCKER_BASETAG=harryr/cockatoo
-#PGDATA_WORKER_DIR=$(DATA_DIR)/worker-pgdata
+DOCKER_BASETAG=cockatoo
+
 MYIP_IFACE = $(shell src/utils/myip.sh)
 MYIP := $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
 MYIFACE := $(shell echo $(MYIP_IFACE) | cut -f 2 -d ' ')
@@ -27,19 +28,14 @@ DOCKER_X11 = -e DISPLAY=$(DISPLAY) -e QT_X11_NO_MITSHM=1 -v $(HOME)/.Xauthority:
 VIRTUALBOX_MODE = headless  # gui
 
 all:
-	@echo "See README.md for information on how to get started"
+	@echo "make first-time  # To build & start everything"
 
-# Generate a postgresql database password automagically
-$(RUN_DIR)/pgpass:
-	openssl rand -base64 15 | tr -cd '[:alnum:]\n' > $@
+first-time: prereq build-all create-all
 
 # Create single file containing all environment segments
-.PHONY: $(RUN_DIR)/env
 $(RUN_DIR)/env: DERP:=$(shell tempfile)
-$(RUN_DIR)/env: $(RUN_DIR)/pgpass
+$(RUN_DIR)/env: src/cuckoo-psql/data/conf/env
 	echo '' > $(DERP)
-	echo -n 'POSTGRES_PASSWORD=' >> $(DERP)
-	cat $(RUN_DIR)/pgpass >> $(DERP)
 	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
 	echo MYIP=$(MYIP) >> $(DERP)
 	echo CPU_COUNT=$(CPU_COUNT) >> $(DERP)
@@ -50,6 +46,7 @@ $(RUN_DIR)/env: $(RUN_DIR)/pgpass
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
 	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
 	echo VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
+	cat $+ >> $(DERP)
 	#echo VM_MAX_N=2 >> $(DERP)
 	mv -f $(DERP) $@
 
@@ -77,49 +74,78 @@ $(DIST_REPORTS_DIR):
 $(WORKER_VMS_DIR):
 	mkdir -p $@
 
-#$(PGDATA_WORKER_DIR):
-#	mkdir -p $@
 
-$(PGDATA_DIST_DIR):
-	mkdir -p $@
+define prefixrule
+.PHONY: $1-$2 $2
+$1-$2:
 
-.PHONY: vmcloak
-vmcloak:
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
+$2: build-$2
 
-.PHONY: virtualbox5
-virtualbox5:
-	docker pull ubuntu:16.04
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
+endef
 
-.PHONY: cuckoo
-cuckoo: virtualbox5
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
 
-.PHONY: postgresql
-postgresql:
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
+MAKEFILES=cuckoo-psql
+$(foreach name,$(MAKEFILES),$(eval $(call prefixrule,make,$(name))))
 
-.PHONY: maltrieve
-maltrieve:
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
 
-.PHONY: cuckoo-worker
-cuckoo-worker: cuckoo
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
+CONTAINERS=maltrieve cuckoo vmcloak cuckoo-rooter cuckoo-worker cuckoo-dist
+$(foreach name,$(CONTAINERS),$(eval $(call prefixrule,container,$(name))))
 
-.PHONY: cuckoo-dist
-cuckoo-dist: cuckoo
-	cd src/$@ && docker build -t $(DOCKER_BASETAG):$@ .
 
-.PHONY: pull
-pull:
-	docker pull $(DOCKER_BASETAG):virtualbox5
-	docker pull $(DOCKER_BASETAG):postgresql
-	docker pull $(DOCKER_BASETAG):vmcloak
-	docker pull $(DOCKER_BASETAG):cuckoo
-	docker pull $(DOCKER_BASETAG):cuckoo-worker
-	docker pull $(DOCKER_BASETAG):cuckoo-dist
+kill-all: $(addprefix kill-,$(CONTAINERS))
+
+kill-%: container-%
+	docker kill -s TERM $* || true
+
+
+delete-all: $(addprefix delete-,$(CONTAINERS)) $(addprefix delete-,$(MAKEFILES))
+
+delete-%: container-%
+	docker rm -f $* 2> /dev/null || true
+
+delete-%: make-%
+	make -C src/$* docker-delete
+
+
+stop-all: $(addprefix stop-,$(CONTAINERS)) $(addprefix stop-,$(MAKEFILES))
+
+stop-%: container-%
+	docker stop $* 2> /dev/null || true
+
+stop-%: make-%
+	make -C src/$* docker-stop
+
+
+create-all: $(addprefix create-,$(CONTAINERS)) $(addprefix create-,$(MAKEFILES))
+
+start-all: $(addprefix start-,$(CONTAINERS)) $(addprefix start-,$(MAKEFILES))
+
+start-%: container-%
+	docker start $* || true
+
+start-%: make-%
+	make -C src/$* docker-start
+
+
+attach-%: container-%
+	docker attach $*
+
+
+shell-%: container-%
+	docker exec -ti $* bash
+
+shell-%: make-%
+	make -C src/$* docker-shell
+
+
+build-all: $(addprefix build-,$(CONTAINERS)) $(addprefix build-,$(MAKEFILES))
+
+build-%: container-%
+	cd src/$* && docker build -t $(DOCKER_BASETAG):$* .
+
+build-%: make-%
+	make -C src/$* docker-build
+
 
 .PHONY: prereq
 prereq:
@@ -135,18 +161,20 @@ docker-gc:
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc spotify/docker-gc
 
 
-.PHONY: build
-build: virtualbox5 cuckoo cuckoo-worker cuckoo-dist postgresql vmcloak maltrieve
-
 # Configure hostonly networks consistently before starting
 # This ensures that vboxnet0 is up and has a known IP / subnet
 .PHONY: pre-run
 pre-run:
-	vboxmanage list hostonlyifs > /dev/null
-	sleep 3
-	vboxmanage list hostonlyifs > /dev/null
-	vboxmanage hostonlyif ipconfig vboxnet0 --ip 172.28.128.1
-	vboxmanage dhcpserver remove --ifname vboxnet0 || true
+	@CNT=0; OK=1; \
+	echo -n "Configuring $(VBOXNET) .."; \
+	while [ $$CNT -lt 4 ]; do \
+		CNT=$$(($$CNT + 1)); \
+		vboxmanage list hostonlyifs > /dev/null; \
+		vboxmanage hostonlyif ipconfig $(VBOXNET) --ip 172.28.128.1; \
+		OK=$$?; if [ $$OK -eq 0 ]; then echo "OK"; break; fi; \
+		echo "."; sleep 1; \
+	done;
+	@vboxmanage dhcpserver remove --ifname $(VBOXNET) || true
 
 .PHONY: run
 run: pre-run
@@ -154,52 +182,17 @@ run: pre-run
 	sudo supervisord -n -c supervisord.conf 
 
 psql:
-	PGPASSWORD=`cat run/pgpass` psql -h localhost -U postgres
+	make -C src/cuckoo-psql psql
 
-stop-vmcloak:
-	@docker kill -s TERM vmcloak || true
-
-stop-worker:
-	@docker kill -s TERM cuckoo-worker || true
-	sleep 3
-
-kill-maltrieve: stop-maltrieve
-	docker kill maltrieve || true
-
-kill-worker: stop-worker
-	docker kill cuckoo-worker || true
-
-stop-dist:
-	@docker kill -s TERM cuckoo-dist-api || true
-	sleep 3
-
-stop-db:
-	@docker kill -s TERM cuckoo-dist-db || true
-	sleep 3
-
-stop-maltrieve:
-	@docker kill -s TERM maltrieve || true
-	sleep 3
-
-stop: stop-vmcloak stop-worker stop-dist stop-db stop-maltrieve
 
 # Supervisorctl
 supervise:
 	sudo supervisorctl -c supervisord.conf
 supervise-dist:
-	docker exec -ti cuckoo-dist-api supervisorctl
+	docker exec -ti cuckoo-dist supervisorctl
 supervise-worker:
 	docker exec -ti cuckoo-worker supervisorctl
 
-# Shells in containers
-shell-db:
-	docker exec -ti cuckoo-dist-db bash
-shell-worker:
-	docker exec -ti cuckoo-worker bash
-shell-dist:
-	docker exec -ti cuckoo-dist-api bash
-shell-maltrieve:
-	docker exec -ti maltrieve bash
 
 run-maltrieve: maltrieve stop-maltrieve
 	@docker rm maltrieve || true
@@ -210,14 +203,15 @@ run-maltrieve-loop:
 
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
-	@docker rm vmcloak || true
-	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos -ti harryr/cockatoo:vmcloak bash
+	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host \
+			   --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+			   -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos \
+			   -ti harryr/cockatoo:vmcloak bash
 
-run-worker: $(RUN_DIR)/env pre-run stop-worker
-	@docker rm cuckoo-worker || true
+create-cuckoo-worker: $(RUN_DIR)/env pre-run
 	mkdir -p /tmp/rooter
-	docker run --name cuckoo-worker --env-file=$(RUN_DIR)/env \
-		--net=host --privileged --cap-add net_admin \
+	docker run -d --name cuckoo-worker --env-file=$(RUN_DIR)/env \
+		--net=host --privileged --cap-add net_admin --link cuckoo-rooter \		
 		$(DOCKER_X11) \
 		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
 		-v /cuckoo/storage/ \
@@ -226,21 +220,25 @@ run-worker: $(RUN_DIR)/env pre-run stop-worker
 		-v /root/.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
 		-v /tmp/rooter:/tmp/rooter \
-		-t $(DOCKER_BASETAG):cuckoo-worker
+		--restart=unless-stopped \
+		-it $(DOCKER_BASETAG):cuckoo-worker
 
-run-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR) stop-dist
-	@docker rm cuckoo-dist-api || true
-	docker run --name cuckoo-dist-api -h cuckoo-dist-api -p 9003:9003 --link cuckoo-dist-db:db --env-file=$(RUN_DIR)/env -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ -v $(DIST_REPORTS_DIR):/mnt/reports -v $(DIST_SAMPLES_DIR):/mnt/samples -t $(DOCKER_BASETAG):cuckoo-dist
+create-cuckoo-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR)
+	docker run -d --name cuckoo-dist -h cuckoo-dist -p 9003:9003 \
+			   --link cuckoo-psql:db --env-file=$(RUN_DIR)/env \
+			   -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+			   -v $(DIST_REPORTS_DIR):/mnt/reports \
+			   -v $(DIST_SAMPLES_DIR):/mnt/samples \
+			   --restart=unless-stopped \
+			   -it $(DOCKER_BASETAG):cuckoo-dist
 
-run-rooter: 
-	sudo python $(ROOT_DIR)/src/cuckoo/cuckoo/utils/rooter.py -g nogroup -v $(ROOT_DIR)/run/rooter.sock
+create-cuckoo-rooter:
+	docker run -d --name cuckoo-rooter -h cuckoo-rooter --net=host -p 9003:9003 \
+			   --env-file=$(RUN_DIR)/env -v /tmp/rooter:/tmp/rooter \
+			   -v $(ROOT_DIR)/run:/cuckoo/run -it $(DOCKER_BASETAG):cuckoo-rooter \
+			   --restart=unless-stopped \
+			   python /cuckoo/utils/rooter.py  -g nogroup -v /cuckoo/run/rooter.sock
 
-# Start the Cuckoo Worker PostgreSQL container
-#run-cuckoo-worker-db: postgresql $(PGDATA_WORKER_DIR) $(RUN_DIR)/pgpass
-#	docker run -v $(PGDATA_WORKER_DIR):/var/lib/postgresql/data/ -e POSTGRES_PASSWORD=`cat $(RUN_DIR)/pgpass` -ti harryr/cockatoo:postgresql
-
-# Start the Cuckoo Dist Server PostgreSQL container
-run-db: $(PGDATA_DIST_DIR) $(RUN_DIR)/env stop-db
-	@docker rm cuckoo-dist-db || true
-	docker run --name cuckoo-dist-db -h cuckoo-dist-db -p 5432:5432 --env-file=$(RUN_DIR)/env -v $(PGDATA_DIST_DIR):/var/lib/postgresql/data/ $(DOCKER_BASETAG):postgresql
+create-cuckoo-psql:
+	make -C src/cuckoo-psql docker-create
 
