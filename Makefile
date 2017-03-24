@@ -25,7 +25,7 @@ CPU_COUNT := $(shell cat /proc/cpuinfo  | grep bogomips | wc -l)
 
 DOCKER_X11 = -e DISPLAY=$(DISPLAY) -e QT_X11_NO_MITSHM=1 -v $(HOME)/.Xauthority:/root/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix
 
-VIRTUALBOX_MODE = headless  # gui
+VIRTUALBOX_MODE = gui  # headless
 
 all:
 	@echo "make first-time  # To build & start everything"
@@ -37,17 +37,17 @@ $(RUN_DIR)/env: DERP:=$(shell tempfile)
 $(RUN_DIR)/env: src/cuckoo-psql/data/conf/env
 	echo '' > $(DERP)
 	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
-	echo MYIP=$(MYIP) >> $(DERP)
-	echo CPU_COUNT=$(CPU_COUNT) >> $(DERP)
-	echo MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
+	echo CUCKOO_MYIP=$(MYIP) >> $(DERP)
+	echo CUCKOO_CPU_COUNT=$(CPU_COUNT) >> $(DERP)
+	echo CUCKOO_MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
 	echo CUCKOO_VPN=$(CUCKOO_VPN) >> $(DERP)
 	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
 	echo CUCKOO_INTERNET_ETH=$(MYIFACE) >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
 	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
 	echo VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
-	cat $+ >> $(DERP)
 	#echo VM_MAX_N=2 >> $(DERP)
+	cat $+ >> $(DERP)
 	mv -f $(DERP) $@
 
 env: $(RUN_DIR)/env 
@@ -88,7 +88,7 @@ MAKEFILES=cuckoo-psql
 $(foreach name,$(MAKEFILES),$(eval $(call prefixrule,make,$(name))))
 
 
-CONTAINERS=maltrieve cuckoo vmcloak cuckoo-rooter cuckoo-worker cuckoo-dist
+CONTAINERS=maltrieve virtualbox5  vmcloak cuckoo cuckoo-rooter cuckoo-worker cuckoo-dist
 $(foreach name,$(CONTAINERS),$(eval $(call prefixrule,container,$(name))))
 
 
@@ -202,16 +202,16 @@ run-maltrieve-loop:
 	./src/utils/maltrieve-loop.sh
 
 # Start a shell in the vmcloak container
-run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) stop-vmcloak
+run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) pre-run
 	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host \
 			   --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
 			   -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos \
-			   -ti harryr/cockatoo:vmcloak bash
+			   -ti cockatoo:vmcloak bash
 
 create-cuckoo-worker: $(RUN_DIR)/env pre-run
 	mkdir -p /tmp/rooter
-	docker run -d --name cuckoo-worker --env-file=$(RUN_DIR)/env \
-		--net=host --privileged --cap-add net_admin --link cuckoo-rooter \		
+	docker run --rm --name cuckoo-worker --env-file=$(RUN_DIR)/env \
+		--net=host --privileged --cap-add net_admin \
 		$(DOCKER_X11) \
 		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
 		-v /cuckoo/storage/ \
@@ -220,8 +220,8 @@ create-cuckoo-worker: $(RUN_DIR)/env pre-run
 		-v /root/.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
 		-v /tmp/rooter:/tmp/rooter \
-		--restart=unless-stopped \
 		-it $(DOCKER_BASETAG):cuckoo-worker
+		# --restart=unless-stopped --name cuckoo-worker \
 
 create-cuckoo-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR)
 	docker run -d --name cuckoo-dist -h cuckoo-dist -p 9003:9003 \
@@ -233,11 +233,10 @@ create-cuckoo-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR)
 			   -it $(DOCKER_BASETAG):cuckoo-dist
 
 create-cuckoo-rooter:
-	docker run -d --name cuckoo-rooter -h cuckoo-rooter --net=host -p 9003:9003 \
+	docker run --rm=true --name cuckoo-rooter -h cuckoo-rooter --net=host -p 9003:9003 \
 			   --env-file=$(RUN_DIR)/env -v /tmp/rooter:/tmp/rooter \
-			   -v $(ROOT_DIR)/run:/cuckoo/run -it $(DOCKER_BASETAG):cuckoo-rooter \
-			   --restart=unless-stopped \
-			   python /cuckoo/utils/rooter.py  -g nogroup -v /cuckoo/run/rooter.sock
+			   -v $(ROOT_DIR)/run:/cuckoo/run -it $(DOCKER_BASETAG):cuckoo-rooter			   
+			   # --restart=unless-stopped \ 
 
 create-cuckoo-psql:
 	make -C src/cuckoo-psql docker-create

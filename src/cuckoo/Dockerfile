@@ -1,4 +1,4 @@
-FROM harryr/cockatoo:virtualbox5
+FROM cockatoo:vmcloak
 
 MAINTAINER harryr, https://github.com/harryr
 # Based on https://github.com/blacktop/docker-cuckoo
@@ -68,7 +68,7 @@ RUN echo "Install ssdeep..." \
   && python setup.py install
 
 RUN apt-get install -y python-psycopg2 ipython python-pil python-m2crypto python-m2ext
-RUN /usr/local/bin/pip install mitmproxy vmcloak
+RUN /usr/local/bin/pip install mitmproxy
 
 # git clone https://github.com/HarryR/cuckoo.git --branch bugfixes --single-branch /cuckoo \
 # chown -R cuckoo:cuckoo /cuckoo \

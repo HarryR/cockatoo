@@ -1,4 +1,4 @@
-FROM harryr/cockatoo:cuckoo
+FROM cockatoo:cuckoo
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV PIP_NO_CACHE_DIR off

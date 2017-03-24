@@ -1,4 +1,4 @@
-FROM harryr/cockatoo:cuckoo
+FROM cockatoo:cuckoo
 
 COPY settings.py /cuckoo/distributed/settings.py
 COPY supervisord.conf /etc/supervisor/conf.d/cuckoo.conf

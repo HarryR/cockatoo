@@ -8,15 +8,19 @@ fi
 # Virtualbox machinery requires import of VMs from vmcloak
 if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 	SUBNET=172.28.128
-	BASEIP=100
 	VM_N=0
-	VM_DIR=/root/.vmcloak/image/
-	VMS_TO_REGISTER=`ls -1 $VM_DIR`
+	VM_IMG_DIR=/root/.vmcloak/image/
+	VMS_TO_REGISTER=`ls -1 $VM_IMG_DIR`
 	if [[ ! -z "$VMS_TO_REGISTER" ]]; then
 		for FILE in $VMS_TO_REGISTER
 		do
-			if [[ ! -f "$VM_DIR/$FILE" ]]; then
-				echo "Skipping $VM_DIR/$FILE"
+			if [[ ! -f "$VM_IMG_DIR/$FILE" ]]; then
+				echo "Skipping $VM_IMG_DIR/$FILE"
+				continue
+			fi
+			vmname=`basename $FILE | cut -f 1 -d .`
+			if [[ ! -f "$VM_IMG_DIR/$vmname.ip" ]]; then
+				echo "Skipping $VM_IMG_DIR/$FILE - no .ip file"
 				continue
 			fi
 			if [[ ! -z "$VM_MAX_N" ]]; then
@@ -25,12 +29,12 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 					break
 				fi
 			fi
-			vmname=`basename $FILE | cut -f 1 -d .`
-			vmip=$SUBNET.$((BASEIP+VM_N))
+			vmip=`cat $vmname.ip`
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true
-			vmcloak snapshot $vmname vm-$vmname $vmip
+			vmcloak snapshot --debug $vmname vm-$vmname $vmip
+			echo "Registering VM"
 			vmcloak register vm-$vmname /cuckoo
 			VM_N=$((VM_N + 1))
 		done

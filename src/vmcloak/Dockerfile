@@ -1,4 +1,4 @@
-FROM harryr/cockatoo:virtualbox5
+FROM cockatoo:virtualbox5
 MAINTAINER Harry Roberts <harry.roberts@xiphosresearch.co.uk>
 
 # Example:
