@@ -7,7 +7,8 @@ fi
 
 # Virtualbox machinery requires import of VMs from vmcloak
 if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
-	SUBNET=172.28.128
+	SUBNET=192.168.56
+	BASEIP=200
 	VM_N=0
 	VM_IMG_DIR=/root/.vmcloak/image/
 	VMS_TO_REGISTER=`ls -1 $VM_IMG_DIR`
@@ -19,17 +20,14 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 				continue
 			fi
 			vmname=`basename $FILE | cut -f 1 -d .`
-			if [[ ! -f "$VM_IMG_DIR/$vmname.ip" ]]; then
-				echo "Skipping $VM_IMG_DIR/$FILE - no .ip file"
-				continue
-			fi
 			if [[ ! -z "$VM_MAX_N" ]]; then
 				if [[ $VM_N -ge $VM_MAX_N ]]; then
 					echo "Not spawning any more, reached MAX $VM_MAX_N"
 					break
 				fi
 			fi
-			vmip=`cat $vmname.ip`
+			vmip=$SUBNET.$BASEIP
+			BASEIP=$((BASEIP + 1))
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true

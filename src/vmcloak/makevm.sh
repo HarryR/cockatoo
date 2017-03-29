@@ -23,6 +23,6 @@ if [[ $? -ne 0 ]]; then
 	exit
 fi
 
-vmcloak init --$VER --iso-mount $ISO_MNT --serial-key $SERIAL --ip 172.28.128.$IP --gateway 172.28.128.1 --resolution 1280x720 $NAME
+vmcloak init --$VER --iso-mount $ISO_MNT --serial-key $SERIAL --ip 192.168.56.$IP --gateway 192.168.56.1 --resolution 1280x720 $NAME
 
 umount $ISO_MNT

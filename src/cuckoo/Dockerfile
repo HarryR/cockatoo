@@ -79,6 +79,8 @@ RUN /usr/local/bin/pip install -r /tmp/cuckoo-requirements.txt
 COPY cuckoo/distributed/requirements.txt /tmp/distributed-requirements.txt
 RUN /usr/local/bin/pip install -r /tmp/distributed-requirements.txt
 
+RUN /usr/local/bin/pip install yara
+
 COPY cuckoo /cuckoo/
 
 RUN groupadd cuckoo \

@@ -45,7 +45,7 @@ $(RUN_DIR)/env: src/cuckoo-psql/data/conf/env
 	echo CUCKOO_INTERNET_ETH=$(MYIFACE) >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
 	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
-	echo VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
+	echo CUCKOO_VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
 	#echo VM_MAX_N=2 >> $(DERP)
 	cat $+ >> $(DERP)
 	mv -f $(DERP) $@
@@ -165,6 +165,7 @@ docker-gc:
 # This ensures that vboxnet0 is up and has a known IP / subnet
 .PHONY: pre-run
 pre-run:
+	# sudo /sbin/vboxconfig 
 	@CNT=0; OK=1; \
 	echo -n "Configuring $(VBOXNET) .."; \
 	while [ $$CNT -lt 4 ]; do \
