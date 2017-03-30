@@ -205,7 +205,7 @@ run-maltrieve-loop:
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) pre-run
 	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host \
-			   --privileged -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+			   --privileged -v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 			   -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos \
 			   -ti cockatoo:vmcloak bash
 
@@ -216,9 +216,9 @@ create-cuckoo-worker: $(RUN_DIR)/env pre-run
 		$(DOCKER_X11) \
 		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
 		-v /cuckoo/storage/ \
-		-v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+		-v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 		-v $(QEMU_PERSIST_DIR):/root/qemu/ \
-		-v /root/.vmcloak/vms/ \
+		-v /.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
 		-v /tmp/rooter:/tmp/rooter \
 		-it $(DOCKER_BASETAG):cuckoo-worker
@@ -227,7 +227,7 @@ create-cuckoo-worker: $(RUN_DIR)/env pre-run
 create-cuckoo-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR)
 	docker run -d --name cuckoo-dist -h cuckoo-dist -p 9003:9003 \
 			   --link cuckoo-psql:db --env-file=$(RUN_DIR)/env \
-			   -v $(VMCLOAK_PERSIST_DIR):/root/.vmcloak/ \
+			   -v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 			   -v $(DIST_REPORTS_DIR):/mnt/reports \
 			   -v $(DIST_SAMPLES_DIR):/mnt/samples \
 			   --restart=unless-stopped \

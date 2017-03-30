@@ -43,38 +43,18 @@ Checkout the source, install the prerequesites and build the containers with:
 	# Then make sure your user is a member of the 'docker' and 'vboxusers' group
 	# e.g.: gpasswd -a $USERNAME docker
 	# e.g.: gpasswd -a $USERNAME vboxusers
-	make -C cockatoo build
+	make -C cockatoo build-all
 	vboxmanage hostonlyif create
 
 	# Then setup rules to block LAN access from vboxnet0
-	ufw allow in on enp4s0f0 from 192.168.10.0/24 to 192.168.10.0/24 port 22
 	ufw default deny incoming
 	ufw route allow in on docker0
-	ufw allow in on vboxnet0 to 172.28.128.0/24
+	ufw allow in on vboxnet0 to 192.168.56.1 port 2042
 	ufw deny in on vboxnet0 to 172.16.0.0/12
 	ufw deny in on vboxnet0 to 192.168.0.0/16
 	ufw deny in on vboxnet0 to 10.0.0.0/8
 	#ufw default allow routed
 
-
-	#ufw default deny incoming
-	#ufw deny in on vboxnet0 to 172.16.0.0/12
-	#ufw deny in on vboxnet0 to 192.168.0.0/16
-	#ufw deny in on vboxnet0 to 10.0.0.0/8
-
-	ufw allow 5432/tcp
-	ufw allow 9003/tcp
-	ufw allow 8090/tcp
-	ufw allow 2042/tcp
-
-	#ufw deny in on vboxnet0 to 172.16.0.0/12
-	#ufw deny in on vboxnet0 to 192.168.0.0/16
-	#ufw deny in on vboxnet0 to 10.0.0.0/8
-	#ufw deny in on vboxnet0 proto ipv6
-	#ufw deny out on enp4s0f0 from 172.28.128.0/24
-
-	#ufw route allow in on vboxnet0 from 172.28.128.0/24
-	#ufw route allow in on docker0
 	#ufw allow 5432/tcp
 	#ufw allow 9003/tcp
 	#ufw allow 8090/tcp

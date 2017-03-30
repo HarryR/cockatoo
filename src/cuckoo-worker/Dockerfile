@@ -26,7 +26,4 @@ RUN cp /usr/sbin/tcpdump /cuckoo/tcpdump
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-EXPOSE 8090
-EXPOSE 2042
-
 CMD ["/usr/bin/supervisord"]

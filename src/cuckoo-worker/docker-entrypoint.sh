@@ -5,12 +5,24 @@ if [ "${1:0:1}" = '-' ]; then
 	set -- supervisord "$@"
 fi
 
+mkdir -p /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage/analyses /cuckoo/storage/binaries /cuckoo/storage/baseline
+chown -R cuckoo: /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage /.vmcloak/image/
+chown root:cuckoo /cuckoo/data/yara/ /tmp/rooter/
+chmod g+w /cuckoo/data/yara/ /tmp/rooter/ /cuckoo/conf/virtualbox.conf
+chown cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf
+
+setcap cap_net_raw,cap_net_admin=eip /cuckoo/tcpdump
+
+bash
+
+export HOME=/
+
 # Virtualbox machinery requires import of VMs from vmcloak
 if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 	SUBNET=192.168.56
 	BASEIP=200
 	VM_N=0
-	VM_IMG_DIR=/root/.vmcloak/image/
+	VM_IMG_DIR=/.vmcloak/image/
 	VMS_TO_REGISTER=`ls -1 $VM_IMG_DIR`
 	if [[ ! -z "$VMS_TO_REGISTER" ]]; then
 		for FILE in $VMS_TO_REGISTER
@@ -31,9 +43,9 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true
-			vmcloak snapshot --debug $vmname vm-$vmname $vmip
+			vmcloak -u cuckoo snapshot --debug $vmname vm-$vmname $vmip
 			echo "Registering VM"
-			vmcloak register vm-$vmname /cuckoo
+			vmcloak -u cuckoo register vm-$vmname /cuckoo
 			VM_N=$((VM_N + 1))
 		done
 	else
@@ -43,7 +55,7 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 # added to the end of the qemu.conf file
 elif [[ "$CUCKOO_MACHINERY" == "qemu" ]]; then
 	QEMU_MACHINES=""
-	VMS_TO_REGISTER=`ls -1 /root/.vmcloak/image/`
+	VMS_TO_REGISTER=`ls -1 /.vmcloak/image/`
 	# Add all .ini files in /root/qemu to my qemu.conf
 	# Then replace 'machines=' line
 	for INIFILE in $VMS_TO_REGISTER

@@ -84,15 +84,14 @@ RUN /usr/local/bin/pip install yara
 COPY cuckoo /cuckoo/
 
 RUN groupadd cuckoo \
- && useradd -d /cuckoo -M -g cuckoo cuckoo \
- && useradd -d /cuckoo -M -g cuckoo cuckoo-run \
+ && useradd -d / -M -g cuckoo cuckoo \
+ && useradd -d / -M -g cuckoo cuckoo-run \
  && cd /cuckoo \
  && python utils/community.py -waf
 
 RUN echo "Clean up unnecessary files..." \
  && apt-get purge -y --auto-remove $buildDeps \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/lib/mongodb
+ && apt-get clean
 
 VOLUME ["/cuckoo/conf", "/root/.vmcloak"]
 
