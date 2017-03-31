@@ -88,7 +88,7 @@ MAKEFILES=cuckoo-psql
 $(foreach name,$(MAKEFILES),$(eval $(call prefixrule,make,$(name))))
 
 
-CONTAINERS=maltrieve virtualbox5  vmcloak cuckoo cuckoo-rooter cuckoo-worker cuckoo-dist
+CONTAINERS=maltrieve virtualbox5  vmcloak cuckoo cuckoo-worker cuckoo-dist
 $(foreach name,$(CONTAINERS),$(eval $(call prefixrule,container,$(name))))
 
 
@@ -210,17 +210,14 @@ run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) pre-run
 			   -ti cockatoo:vmcloak bash
 
 create-cuckoo-worker: $(RUN_DIR)/env pre-run
-	mkdir -p /tmp/rooter
 	docker run --rm --name cuckoo-worker --env-file=$(RUN_DIR)/env \
 		--net=host --privileged --cap-add net_admin \
 		$(DOCKER_X11) \
-		-v $(ROOT_DIR)/run/rooter.sock:/cuckoo/rooter.sock \
 		-v /cuckoo/storage/ \
 		-v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 		-v $(QEMU_PERSIST_DIR):/root/qemu/ \
 		-v /.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
-		-v /tmp/rooter:/tmp/rooter \
 		-it $(DOCKER_BASETAG):cuckoo-worker
 		# --restart=unless-stopped --name cuckoo-worker \
 
@@ -232,12 +229,6 @@ create-cuckoo-dist: $(RUN_DIR)/env $(DIST_SAMPLES_DIR) $(DIST_REPORTS_DIR)
 			   -v $(DIST_SAMPLES_DIR):/mnt/samples \
 			   --restart=unless-stopped \
 			   -it $(DOCKER_BASETAG):cuckoo-dist
-
-create-cuckoo-rooter:
-	docker run --rm=true --name cuckoo-rooter -h cuckoo-rooter --net=host -p 9003:9003 \
-			   --env-file=$(RUN_DIR)/env -v /tmp/rooter:/tmp/rooter \
-			   -v $(ROOT_DIR)/run:/cuckoo/run -it $(DOCKER_BASETAG):cuckoo-rooter			   
-			   # --restart=unless-stopped \ 
 
 create-cuckoo-psql:
 	make -C src/cuckoo-psql docker-create

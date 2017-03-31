@@ -7,13 +7,11 @@ fi
 
 mkdir -p /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage/analyses /cuckoo/storage/binaries /cuckoo/storage/baseline
 chown -R cuckoo: /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage /.vmcloak/image/
-chown root:cuckoo /cuckoo/data/yara/ /tmp/rooter/
-chmod g+w /cuckoo/data/yara/ /tmp/rooter/ /cuckoo/conf/virtualbox.conf
+chown root:cuckoo /cuckoo/data/yara/
+chmod g+w /cuckoo/data/yara/ /cuckoo/conf/virtualbox.conf
 chown cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf
 
 setcap cap_net_raw,cap_net_admin=eip /cuckoo/tcpdump
-
-bash
 
 export HOME=/
 
@@ -27,11 +25,13 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 	if [[ ! -z "$VMS_TO_REGISTER" ]]; then
 		for FILE in $VMS_TO_REGISTER
 		do
-			if [[ ! -f "$VM_IMG_DIR/$FILE" ]]; then
+			vmname=`basename $FILE | cut -f 1 -d .`
+			vmformat=`basename $FILE | cut -f 2 -d .`
+
+			if [[ ! -f "$VM_IMG_DIR/$FILE" ]] || [[ "$vmformat" != 'vdi' ]]; then
 				echo "Skipping $VM_IMG_DIR/$FILE"
 				continue
 			fi
-			vmname=`basename $FILE | cut -f 1 -d .`
 			if [[ ! -z "$VM_MAX_N" ]]; then
 				if [[ $VM_N -ge $VM_MAX_N ]]; then
 					echo "Not spawning any more, reached MAX $VM_MAX_N"

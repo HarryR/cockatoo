@@ -9,7 +9,7 @@ if [[ -e $PIDFILE ]]; then
   rm -f $PIDFILE
 fi
 # Initially background the API, then register with Distributed API
-/usr/bin/python /cuckoo/utils/api.py -H 0.0.0.0 &
+/usr/bin/python /cuckoo/utils/api.py -u cuckoo -H 0.0.0.0 &
 echo $? > /tmp/cuckoo-api.pid
 sleep 5
 MYIP=$CUCKOO_MYIP
