@@ -32,6 +32,9 @@ all:
 
 first-time: prereq build-all create-all
 
+src/cuckoo-psql/data/conf/env:
+	make -C src/cuckoo-psql data/conf/env
+
 # Create single file containing all environment segments
 $(RUN_DIR)/env: DERP:=$(shell tempfile)
 $(RUN_DIR)/env: src/cuckoo-psql/data/conf/env
