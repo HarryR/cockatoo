@@ -2,6 +2,7 @@
 ufw --force reset
 
 ufw default deny incoming
+ufw allow 22
 ufw route allow in on docker0
 ufw route allow in on vboxnet0
 ufw allow in on vboxnet0 to 192.168.56.1 port 2042 from 192.168.56.0/24
