@@ -7,6 +7,3 @@
 [submodule "src/maltrieve"]
 	path = src/maltrieve
 	url = https://github.com/HarryR/maltrieve.git
-[submodule "src/cuckoo-psql"]
-	path = src/cuckoo-psql
-	url = https://github.com/HarryR/postgresql-container.git

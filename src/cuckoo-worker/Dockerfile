@@ -4,6 +4,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV PIP_NO_CACHE_DIR off
 ENV PIP_DISABLE_PIP_VERSION_CHECK on
 
+RUN apt-get install -y openvpn
+
 #RUN apt-get update
 #RUN apt-get install -y qemu-kvm qemu-system-arm qemu-system-common qemu-system-mips qemu-system-ppc qemu-system-sparc qemu-system-x86 qemu-system-misc qemu 
 
@@ -27,5 +29,4 @@ COPY conf/vpn.conf /cuckoo/conf/vpn.conf
 COPY conf/processing.conf /cuckoo/conf/processing.conf
 COPY conf/cuckoo.conf /cuckoo/conf/cuckoo.conf
 COPY docker-entrypoint.sh /
-COPY cuckoo-api-wrapper.sh /
 

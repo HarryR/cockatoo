@@ -13,8 +13,6 @@ MAINTAINER harryr, https://github.com/harryr
 # 	&& rm /usr/local/bin/gosu.asc \
 # 	&& chmod +x /usr/local/bin/gosu
 
-# TODO: ADD yara and volatility
-
 ENV DEBIAN_FRONTEND noninteractive
 ENV SSDEEP ssdeep-2.13
 ENV PIP_NO_CACHE_DIR off
@@ -79,9 +77,14 @@ RUN /usr/local/bin/pip install -r /tmp/cuckoo-requirements.txt
 COPY cuckoo/distributed/requirements.txt /tmp/distributed-requirements.txt
 RUN /usr/local/bin/pip install -r /tmp/distributed-requirements.txt
 
-RUN /usr/local/bin/pip install yara
+RUN /usr/local/bin/pip install yara beanstalkc
 
-COPY cuckoo /cuckoo/
+COPY cuckoo /cuckoo
+WORKDIR /cuckoo
+
+#RUN python setup.py sdist
+#RUN python setup.py develop
+#RUN python setup.py install
 
 RUN groupadd cuckoo \
  && useradd -d / -M -g cuckoo cuckoo \
@@ -95,4 +98,3 @@ RUN echo "Clean up unnecessary files..." \
 
 VOLUME ["/cuckoo/conf", "/root/.vmcloak"]
 
-WORKDIR /cuckoo

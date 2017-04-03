@@ -43,7 +43,11 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true
-			vmcloak -u cuckoo snapshot --debug $vmname vm-$vmname $vmip
+			VMCLOAK_ARGS=
+			if [[ $CUCKOO_VIRTUALBOX_MODE = 'gui' ]]; then
+				VMCLOAK_ARGS=--vm-visible
+			fi
+			vmcloak -u cuckoo snapshot $VMCLOAK_ARGS --debug $vmname vm-$vmname $vmip
 			echo "Registering VM"
 			vmcloak -u cuckoo register vm-$vmname /cuckoo
 			VM_N=$((VM_N + 1))
@@ -53,9 +57,9 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 	fi
 # Whereas qemu machinery just needs our custom config files
 # added to the end of the qemu.conf file
-elif [[ "$CUCKOO_MACHINERY" == "qemu" ]]; then
+elif [[ "$CUCKOO_MACHINERY" = "qemu" ]]; then
 	QEMU_MACHINES=""
-	VMS_TO_REGISTER=`ls -1 /.vmcloak/image/`
+	VMS_TO_REGISTER=`ls -1 /.vmcloak/image/*.ini`
 	# Add all .ini files in /root/qemu to my qemu.conf
 	# Then replace 'machines=' line
 	for INIFILE in $VMS_TO_REGISTER
