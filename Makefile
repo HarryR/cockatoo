@@ -50,7 +50,6 @@ $(RUN_DIR)/env:
 	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
 	echo CUCKOO_VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
 	#echo VM_MAX_N=2 >> $(DERP)
-	cat $+ >> $(DERP)
 	mv -f $(DERP) $@
 
 env: $(RUN_DIR)/env 
