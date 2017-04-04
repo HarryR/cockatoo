@@ -5,15 +5,17 @@ if [ "${1:0:1}" = '-' ]; then
 	set -- supervisord "$@"
 fi
 
-mkdir -p /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage/analyses /cuckoo/storage/binaries /cuckoo/storage/baseline
-chown -R cuckoo: /.config/ /cuckoo/log /cuckoo/db /cuckoo/storage /.vmcloak/image/
-chown root:cuckoo /cuckoo/data/yara/
-chmod g+w /cuckoo/data/yara/ /cuckoo/conf/virtualbox.conf
-chown cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf
-
-setcap cap_net_raw,cap_net_admin=eip /cuckoo/tcpdump
+mkdir -p /.config/ /.cuckoo/log /.cuckoo/db /.cuckoo/yara /.cuckoo/storage/analyses /.cuckoo/storage/binaries /.cuckoo/storage/baseline || true
+touch /.cuckoo/.cwd /.cuckoo/yara/index_memory.yar /.cuckoo/yara/index_urls.yar /.cuckoo/yara/index_binaries.yar
+chown -fR cuckoo: /.config/ /.cuckoo/ /.vmcloak/image/ || true
+chown -f root:cuckoo /cuckoo/data/yara/ || true
+chmod -f g+w /cuckoo/data/yara/ /.cuckoo/conf/virtualbox.conf || true
+chown -f cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf || true
 
 export HOME=/
+
+ifconfig vboxnet0 192.168.56.1/24
+
 
 # Virtualbox machinery requires import of VMs from vmcloak
 if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
@@ -49,7 +51,7 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 			fi
 			vmcloak -u cuckoo snapshot $VMCLOAK_ARGS --debug $vmname vm-$vmname $vmip
 			echo "Registering VM"
-			vmcloak -u cuckoo register vm-$vmname /cuckoo
+			vmcloak -u cuckoo register vm-$vmname /.cuckoo
 			VM_N=$((VM_N + 1))
 		done
 	else

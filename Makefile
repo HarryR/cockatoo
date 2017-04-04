@@ -182,10 +182,11 @@ run-cuckoo: $(RUN_DIR)/env pre-run
 	docker run --rm --name cuckoo --env-file=$(RUN_DIR)/env \
 		--net=host --privileged --cap-add net_admin \
 		$(DOCKER_X11) \
-		-v /cuckoo/storage/ \
+		-v /.cuckoo/storage/ \
 		-v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 		-v $(QEMU_PERSIST_DIR):/root/qemu/ \
 		-v /.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
-		-it $(DOCKER_BASETAG):cuckoo-worker
+		-it $(DOCKER_BASETAG):cuckoo-worker # bash
+		#-v `pwd`/src/cuckoo/cuckoo:/cuckoo \
 
