@@ -12,6 +12,8 @@ chown -f root:cuckoo /cuckoo/data/yara/ || true
 chmod -f g+w /cuckoo/data/yara/ /.cuckoo/conf/virtualbox.conf || true
 chown -f cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf || true
 
+cp -R /cuckoo/analyzer/* /.cuckoo/analyzer/
+
 export HOME=/
 
 ifconfig vboxnet0 192.168.56.1/24
