@@ -5,6 +5,8 @@ FROM cockatoo:cuckoo
 
 EXPOSE 8090
 
+RUN apt-get -y install tor
+
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["/usr/bin/supervisord"]
@@ -17,7 +19,6 @@ COPY conf/routing.conf /.cuckoo/conf/routing.conf
 COPY conf/virtualbox.conf /.cuckoo/conf/virtualbox.conf
 COPY conf/qemu.conf /.cuckoo/conf/qemu.conf
 COPY conf/auxiliary.conf /.cuckoo/conf/auxiliary.conf
-COPY conf/vpn.conf /.cuckoo/conf/vpn.conf
 COPY conf/processing.conf /.cuckoo/conf/processing.conf
 COPY conf/cuckoo.conf /.cuckoo/conf/cuckoo.conf
 COPY docker-entrypoint.sh /

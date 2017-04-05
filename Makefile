@@ -4,7 +4,7 @@ RUN_DIR = $(ROOT_DIR)/run/
 
 # Tune how cuckoo worker connects to internet
 CUCKOO_VPN := no
-CUCKOO_DEFAULT_ROUTE ?= internet # cryptostorm 
+CUCKOO_DEFAULT_ROUTE ?= tor  # internet
 CUCKOO_MACHINERY ?= virtualbox
 
 VBOXNET=vboxnet0
