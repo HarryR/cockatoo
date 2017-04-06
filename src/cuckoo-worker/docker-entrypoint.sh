@@ -5,7 +5,7 @@ if [ "${1:0:1}" = '-' ]; then
 	set -- supervisord "$@"
 fi
 
-mkdir -p /.config/ /.cuckoo/log /.cuckoo/db /.cuckoo/yara /.cuckoo/storage/analyses /.cuckoo/storage/binaries /.cuckoo/storage/baseline || true
+mkdir -p /.config/ /.cuckoo/log /.cuckoo/db /.cuckoo/yara /.cuckoo/storage/analyses /.cuckoo/storage/binaries /.cuckoo/storage/baseline /.vmcloak/image/ || true
 touch /.cuckoo/.cwd /.cuckoo/yara/index_memory.yar /.cuckoo/yara/index_urls.yar /.cuckoo/yara/index_binaries.yar
 chown -fR cuckoo: /.config/ /.cuckoo/ /.vmcloak/image/ || true
 chown -f root:cuckoo /cuckoo/data/yara/ || true
