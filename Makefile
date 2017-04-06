@@ -25,12 +25,12 @@ CPU_COUNT ?= $(shell cat /proc/cpuinfo  | grep bogomips | wc -l)
 
 DOCKER_X11 = -e DISPLAY=$(DISPLAY) -e QT_X11_NO_MITSHM=1 -v $(HOME)/.Xauthority:/root/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix
 
-VIRTUALBOX_MODE ?= gui  # headless
+VIRTUALBOX_MODE ?= headless  # gui
 
 all: build
 
 .PHONY: bootstrap
-bootstrap: prereq build ufw
+bootstrap: prereq build
 
 ufw:
 	./src/utils/ufw-firewall.sh
@@ -39,7 +39,6 @@ ufw:
 $(RUN_DIR)/env: DERP:=$(shell tempfile)
 $(RUN_DIR)/env:
 	echo '' > $(DERP)
-	echo 'CUCKOO_DIST_API=http://127.0.0.1:9003' >> $(DERP)
 	echo CUCKOO_MYIP=$(MYIP) >> $(DERP)
 	echo CUCKOO_CPU_COUNT=$(CPU_COUNT) >> $(DERP)
 	echo CUCKOO_MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
@@ -182,10 +181,8 @@ run-cuckoo: $(RUN_DIR)/env pre-run
 		--net=host --privileged --cap-add net_admin \
 		$(DOCKER_X11) \
 		-v /.cuckoo/storage/ \
-		-v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
+		-v /.vmcloak/ \
+		-v $(VMCLOAK_PERSIST_DIR)/image:/.vmcloak/image/ \
 		-v $(QEMU_PERSIST_DIR):/root/qemu/ \
-		-v /.vmcloak/vms/ \
 		-v /dev/vboxdrv:/dev/vboxdrv \
 		-it $(DOCKER_BASETAG):cuckoo-worker # bash
-		#-v `pwd`/src/cuckoo/cuckoo:/cuckoo \
-

@@ -22,16 +22,16 @@ The setup process goes as follows:
 
  1. Checkout cockatoo source code
  2. Install prerequesites
- 3. Build Docker containers
+ 3. Build Docker container
  4. Copy Windows ISOs into `cockatoo/isos`
  5. Build and customise Base VMs using `vmcloak`
- 6. Start docker containers
+ 6. Start docker container
 
 Checkout the source, install the prerequesites and build the containers with:
 
-	apt-get install make git
+	sudo apt-get install make git
 	git clone https://github.com/HarryR/cockatoo --recursive
-	make -C cockatoo prereq
+	make -C cockatoo prereq  # uses sudo
 
 	# In /etc/default/docker - modify DOCKER_OPTS:
 	# DOCKER_OPTS="--storage-driver=devicemapper"
@@ -41,7 +41,7 @@ Checkout the source, install the prerequesites and build the containers with:
 	# e.g.: gpasswd -a $USERNAME docker
 	# e.g.: gpasswd -a $USERNAME vboxusers
 
-	make -C bootstrap
+	make -C build run-cuckoo
 
 The full build process will take 10 minutes to an hour+ depending on your
 internet, cpu and disk speeds etc. Assuming everything goes well you will have 

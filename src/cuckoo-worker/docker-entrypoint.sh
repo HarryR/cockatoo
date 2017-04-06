@@ -7,10 +7,10 @@ fi
 
 mkdir -p /.config/ /.cuckoo/log /.cuckoo/db /.cuckoo/yara /.cuckoo/storage/analyses /.cuckoo/storage/binaries /.cuckoo/storage/baseline /.vmcloak/image/ || true
 touch /.cuckoo/.cwd /.cuckoo/yara/index_memory.yar /.cuckoo/yara/index_urls.yar /.cuckoo/yara/index_binaries.yar
-chown -fR cuckoo: /.config/ /.cuckoo/ /.vmcloak/image/ || true
+chown -fR cuckoo: /.config/ /.cuckoo/ /.vmcloak/ || true
 chown -f root:cuckoo /cuckoo/data/yara/ || true
 chmod -f g+w /cuckoo/data/yara/ /.cuckoo/conf/virtualbox.conf || true
-chown -f cuckoo: /.vmcloak/repository.db /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf || true
+chown -f cuckoo: /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf || true
 
 cp -R /cuckoo/analyzer/* /.cuckoo/analyzer/
 
@@ -18,22 +18,20 @@ export HOME=/
 
 ifconfig vboxnet0 192.168.56.1/24
 
-
 # Virtualbox machinery requires import of VMs from vmcloak
 if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 	SUBNET=192.168.56
-	BASEIP=200
+	BASEIP=127
 	VM_N=0
-	VM_IMG_DIR=/.vmcloak/image/
-	VMS_TO_REGISTER=`ls -1 $VM_IMG_DIR`
+	IMGDIR=/.vmcloak/image
+	VMS_TO_REGISTER=`ls -1 $IMGDIR/*.vdi | xargs -n 1 basename`
 	if [[ ! -z "$VMS_TO_REGISTER" ]]; then
 		for FILE in $VMS_TO_REGISTER
 		do
 			vmname=`basename $FILE | cut -f 1 -d .`
-			vmformat=`basename $FILE | cut -f 2 -d .`
 
-			if [[ ! -f "$VM_IMG_DIR/$FILE" ]] || [[ "$vmformat" != 'vdi' ]]; then
-				echo "Skipping $VM_IMG_DIR/$FILE"
+			if [[ ! -f "$IMGDIR/$FILE" ]]; then
+				echo "Skipping $IMGDIR/$FILE"
 				continue
 			fi
 			if [[ ! -z "$VM_MAX_N" ]]; then
@@ -44,6 +42,14 @@ if [[ "$CUCKOO_MACHINERY" = "virtualbox" ]]; then
 			fi
 			vmip=$SUBNET.$BASEIP
 			BASEIP=$((BASEIP + 1))
+
+			OPTFILE="$IMGDIR/$vmname.opt"
+			if [[ -f $OPTFILE ]]; then
+				OPTS=$(eval echo $(cat $OPTFILE))
+				vmcloak add $OPTS $vmname
+				chown cuckoo: /.vmcloak/*.db
+			fi
+
 			# First purge, then register it again
 			echo "Importing VM: $vmname - IP: $vmip"
 			#/cuckoo/utils/machine.py --delete $vmname || true

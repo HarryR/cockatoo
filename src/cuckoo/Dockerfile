@@ -27,7 +27,6 @@ RUN buildDeps='ca-certificates \
                numactl \
                curl' \
   && set -x \
-  && apt-get update -qq \
   && apt-get install -y $buildDeps \
                           python \
                           tcpdump \
@@ -63,7 +62,7 @@ RUN /usr/local/bin/pip install mitmproxy
 # git clone https://github.com/HarryR/cuckoo.git --branch bugfixes --single-branch /cuckoo \
 # chown -R cuckoo:cuckoo /cuckoo \
 
-RUN /usr/local/bin/pip install yara beanstalkc
+RUN /usr/local/bin/pip install yara
 
 RUN groupadd cuckoo \
  && useradd -d / -M -g cuckoo cuckoo \
