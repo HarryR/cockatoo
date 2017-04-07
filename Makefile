@@ -118,15 +118,17 @@ build-%: container-%
 .PHONY: prereq
 prereq:
 	sudo apt-get update
-	sudo apt-get -y install apt-transport-https ca-certificates supervisor virtualbox-dkms virtualbox openvpn
+	sudo apt-get -y install jq apt-transport-https ca-certificates supervisor openvpn
 	sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
 	sudo sh -c "echo 'deb https://apt.dockerproject.org/repo ubuntu-xenial main' > /etc/apt/sources.list.d/docker.list"
 	sudo apt-get update
 	sudo apt-get -y install linux-image-extra-`uname -r` docker-engine docker-compose
 
+	sudo ./src/virtualbox5/install-virtualbox.sh
+
 docker-gc:
+	docker volume prune -f
 	docker pull spotify/docker-gc
-	docker volume prume
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc spotify/docker-gc
 
 
@@ -160,9 +162,10 @@ supervise-cuckoo:
 	docker exec -ti cuckoo supervisorctl
 
 
-run-maltrieve: maltrieve stop-maltrieve
-	@docker rm maltrieve || true
-	docker run --rm=true --name maltrieve -h maltrieve --link cuckoo-worker:cuckoo -v $(MALTRIEVE_DIR):/archive -t $(DOCKER_BASETAG):maltrieve
+run-maltrieve: 
+	docker run --rm=true --name maltrieve -h maltrieve \
+			   -v $(MALTRIEVE_DIR):/archive --net=host -ti \
+			   $(DOCKER_BASETAG):maltrieve
 
 run-maltrieve-loop:
 	./src/utils/maltrieve-loop.sh
@@ -172,7 +175,7 @@ run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) pre-run
 	docker run --rm=true $(DOCKER_X11) --name vmcloak --net=host \
 			   --privileged -v $(VMCLOAK_PERSIST_DIR):/.vmcloak/ \
 			   -v /dev/vboxdrv:/dev/vboxdrv -v $(VMCLOAK_ISOS_DIR):/mnt/isos \
-			   -ti cockatoo:vmcloak bash
+			   -ti $(DOCKER_BASETAG):vmcloak bash
 
 # Run the Cuckoo worker container
 run-cuckoo: $(RUN_DIR)/env pre-run
