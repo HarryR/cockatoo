@@ -12,6 +12,9 @@ chown -f root:cuckoo /cuckoo/data/yara/ || true
 chmod -f g+w /cuckoo/data/yara/ /.cuckoo/conf/virtualbox.conf || true
 chown -f cuckoo: /.vmcloak/ /.vmcloak/vms/ /cuckoo/conf/virtualbox.conf || true
 
+mkdir -p /.tor
+chown debian-tor: /.tor
+
 cp -R /cuckoo/analyzer/* /.cuckoo/analyzer/
 
 export HOME=/
