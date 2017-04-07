@@ -9,5 +9,5 @@ VOLUME /dev/vboxdrv
 RUN apt-get update
 RUN apt-get -y install curl wget
 
-COPY .install-virtualbox.sh /
+COPY install-virtualbox.sh /.install-virtualbox.sh
 RUN /.install-virtualbox.sh
