@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND noninteractive
 VOLUME /dev/vboxdrv
 
 RUN apt-get update
-RUN apt-get -y install curl wget
+RUN apt-get -y install lsb-release curl wget
 
 COPY install-virtualbox.sh /.install-virtualbox.sh
 RUN /.install-virtualbox.sh
