@@ -15,7 +15,7 @@ MALTRIEVE_DIR=$(DATA_DIR)/maltrieve/
 QEMU_PERSIST_DIR=$(DATA_DIR)/qemu
 DIST_SAMPLES_DIR=$(DATA_DIR)/samples/
 DIST_REPORTS_DIR=$(DATA_DIR)/reports/
-DOCKER_BASETAG=cockatoo
+DOCKER_BASETAG=harryr/cockatoo
 
 MYIP_IFACE ?= $(shell src/utils/myip.sh)
 MYIP ?= $(shell echo $(MYIP_IFACE) | cut -f 1 -d ' ')
