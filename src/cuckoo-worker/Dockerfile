@@ -1,4 +1,4 @@
-FROM cockatoo:cuckoo
+FROM harryr/cockatoo:cuckoo
 
 EXPOSE 8090
 

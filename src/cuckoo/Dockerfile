@@ -1,4 +1,4 @@
-FROM cockatoo:vmcloak
+FROM harryr/cockatoo:vmcloak
 
 MAINTAINER harryr, https://github.com/harryr
 
