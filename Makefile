@@ -40,15 +40,14 @@ $(RUN_DIR)/env: DERP:=$(shell tempfile)
 $(RUN_DIR)/env:
 	echo '' > $(DERP)
 	echo CUCKOO_MYIP=$(MYIP) >> $(DERP)
-	echo CUCKOO_CPU_COUNT=$(CPU_COUNT) >> $(DERP)
-	echo CUCKOO_MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 2)) >> $(DERP)
+	echo CUCKOO_STARTUP_COUNT=$$(( ($(CPU_COUNT) / 4) + 1 )) >> $(DERP)
+	echo CUCKOO_MAX_VMS=$$(( $(MEM_TOTAL) / 1024 / 1024 / 3)) >> $(DERP)
 	echo CUCKOO_VPN=$(CUCKOO_VPN) >> $(DERP)
 	echo CUCKOO_MACHINERY=$(CUCKOO_MACHINERY) >> $(DERP)
 	echo CUCKOO_INTERNET_ETH=$(MYIFACE) >> $(DERP)
 	echo CUCKOO_DEFAULT_ROUTE=$(CUCKOO_DEFAULT_ROUTE) >> $(DERP)
 	echo CUCKOO_DEBUG=$(CUCKOO_DEBUG) >> $(DERP)
 	echo CUCKOO_VIRTUALBOX_MODE=$(VIRTUALBOX_MODE) >> $(DERP)
-	#echo VM_MAX_N=2 >> $(DERP)
 	mv -f $(DERP) $@
 
 env: $(RUN_DIR)/env 
