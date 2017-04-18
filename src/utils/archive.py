@@ -49,6 +49,10 @@ def split_dir(opts, task_guid):
 
 
 def task_download(opts, task):
+    if not task['completed_on']:
+        print(" [-] Not completed", task_id)
+        return
+
     task_id = str(task['id'])
     if not task.get('sample', None):
         task_guid = hash_str(task['target'])
