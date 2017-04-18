@@ -169,7 +169,7 @@ start-netdata:
 run-maltrieve: 
 	docker run --rm=true --name maltrieve -h maltrieve \
 			   -v $(MALTRIEVE_DIR):/archive --net=host -ti \
-			   $(DOCKER_BASETAG):maltrieve -c http://192.168.56.1:8090 \
+			   $(DOCKER_BASETAG):maltrieve -c http://192.168.56.1:8090 -d /archive \
 			   --malshare 5e4446781703f364e3fa81acab25c2349ad3718ae9603eb49320676d74d76725
 
 archive:
