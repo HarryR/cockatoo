@@ -51,37 +51,40 @@ def split_dir(opts, task_guid):
 def task_download(opts, task):
     task_id = str(task['id'])
     if not task['completed_on']:
-        print(" [-] Not completed", task_id)
         return
 
     if not task.get('sample', None):
         task_guid = hash_str(task['target'])
     else:
         task_guid = task['sample']['sha1']
-    year_month = datetime.now().strftime('%Y-%m')
+
+    completed_on = datetime.strptime(task['completed_on'], '%Y-%m-%d %H:%M:%S')
+    year_month = completed_on.now().strftime('%Y-%m')
     output_dir = os.path.join(opts.archive, year_month, task_guid[0], task_guid[1])
-    output_file = os.path.join(output_dir, task_guid + '.tar.bz2')
-    output_task = os.path.join(output_dir, task_guid + '.task')
-    output_report = os.path.join(output_dir, task_guid + '.report')
-    if os.path.exists(output_file):
-        print(" [-] Skipped, file already exists", task_id)
-        return
+
     if not os.path.isdir(output_dir):
         mkdir_p(output_dir)
 
-    print(" [*] %s" % (output_file,))
-    command = 'docker exec -u cuckoo cuckoo tar cjhf - -C /.cuckoo/storage/analyses/' + str(task_id) + '/ . > ' + output_file
-    subprocess.check_call(command, shell=True)
+    output_file = os.path.join(output_dir, task_guid + '.tar.bz2')
+    if not os.path.exists(output_file):
+        print(" [*] %s" % (output_file,))
+        command = 'docker exec -u cuckoo cuckoo tar cjhf - -C /.cuckoo/storage/analyses/' + str(task_id) + '/ . > ' + output_file
+        subprocess.check_call(command, shell=True)
 
-    with open(output_task, 'wb') as handle:
-        handle.write(json.dumps(task))
+    output_task = os.path.join(output_dir, task_guid + '.task')
+    if not os.path.exists(output_task):
+        with open(output_task, 'wb') as handle:
+            handle.write(json.dumps(task))
+        print(" [*] %s" % (output_task,))
 
-    with closing(requests.get(opts.cuckoo + '/tasks/report/' + task_id, params=dict(report_format='json'), stream=True)) as resp:
-        with open(output_report, 'wb') as handle:
-            for chunk in resp.iter_content(chunk_size=1024 * 512):
-                handle.write(chunk)
+    output_report = os.path.join(output_dir, task_guid + '.report')
+    if not os.path.exists(output_report):
+        with closing(requests.get(opts.cuckoo + '/tasks/report/' + task_id, params=dict(report_format='json'), stream=True)) as resp:
+            with open(output_report, 'wb') as handle:
+                for chunk in resp.iter_content(chunk_size=1024 * 512):
+                    handle.write(chunk)
+            print(" [*] %s" % (output_report,))
 
-    completed_on = datetime.strptime(task['completed_on'], '%Y-%m-%d %H:%M:%S')
     time_threshold = datetime.today() - timedelta(opts.days)
     if completed_on < time_threshold:
         print(" [-] Deleted")
