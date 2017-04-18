@@ -87,7 +87,7 @@ def task_download(opts, task):
 
     time_threshold = datetime.today() - timedelta(opts.days)
     if completed_on < time_threshold:
-        print(" [-] Deleted")
+        print(" [-] Deleted", task_id, task_guid)
         requests.get(opts.cuckoo + "/tasks/delete/" + task_id)
 
 
@@ -100,7 +100,6 @@ def main(args=None):
     print()
     for task in find_finished(opts)['tasks']:
         task_download(opts, task)
-        print()
 
 
 if __name__ == "__main__":
