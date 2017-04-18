@@ -161,13 +161,21 @@ supervise-cuckoo:
 	docker exec -ti cuckoo supervisorctl
 
 
+start-netdata:
+	docker pull titpetric/netdata
+	docker run --name netdata --restart=unless-stopped -tid --cap-add SYS_PTRACE -v /proc:/host/proc:ro -v /sys:/host/sys:ro -p 19999:19999 titpetric/netdata
+
+
 run-maltrieve: 
 	docker run --rm=true --name maltrieve -h maltrieve \
 			   -v $(MALTRIEVE_DIR):/archive --net=host -ti \
 			   $(DOCKER_BASETAG):maltrieve
 
-run-maltrieve-loop:
-	./src/utils/maltrieve-loop.sh
+archive:
+	./src/utils/archive.py
+
+run-loop:
+	./src/utils/loop.sh
 
 # Start a shell in the vmcloak container
 run-vmcloak: vmcloak  $(VMCLOAK_PERSIST_DIR) pre-run
