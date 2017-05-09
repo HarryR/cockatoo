@@ -45,6 +45,17 @@ the VirtualBox GUI.
 	VIRTUALBOX_MODE=gui make -C cockatoo run-cuckoo
 
 
+To start after a reboot, create crontab entries:
+
+```crontab
+# m h  dom mon dow   command
+  0 *  *   *   *     make -C /srv/cockatoo archive
+@reboot              screen -d -m -S maltrieve make -C /srv/cockatoo run-maltrieve
+@reboot              screen -d -m -S cuckoo make -C /srv/cockatoo run-cuckoo
+
+```
+
+
 ## Useful Links
 
  * http://vmcloak.org/
