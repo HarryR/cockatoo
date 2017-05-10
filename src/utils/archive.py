@@ -65,11 +65,13 @@ def task_download(opts, task):
     if not os.path.isdir(output_dir):
         mkdir_p(output_dir)
 
-    output_file = os.path.join(output_dir, task_guid + '.tar.bz2')
+    output_file = os.path.join(output_dir, task_guid + '.zip')
     if not os.path.exists(output_file):
         print(" [*] %s" % (output_file,))
-        command = 'docker exec -u cuckoo cuckoo tar cjhf - -C /.cuckoo/storage/analyses/' + str(task_id) + '/ . > ' + output_file
+        command = 'docker exec -u cuckoo cuckoo sh -c "cd /.cuckoo/storage/analyses/' + str(task_id) + '/ && zip -q9r - ." > ' + output_file
         subprocess.check_call(command, shell=True)
+        if not os.path.exists(output_file) or os.stat(output_file).st_size == 0:
+            raise RuntimeError("Failed to create zip file!")
 
     output_task = os.path.join(output_dir, task_guid + '.task')
     if not os.path.exists(output_task):

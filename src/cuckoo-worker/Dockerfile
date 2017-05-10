@@ -10,6 +10,8 @@ CMD ["/usr/bin/supervisord"]
 
 WORKDIR /.cuckoo/
 
+RUN apt-get install p7zip-full zip
+
 RUN mkdir -p /.cuckoo/conf
 RUN cd /.cuckoo/conf && touch esx.conf avd.conf kvm.conf physical.conf vmware.conf vsphere.conf xenserver.conf
 
